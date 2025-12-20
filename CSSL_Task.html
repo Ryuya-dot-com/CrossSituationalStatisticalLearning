@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cross-Situational Statistical Learning Task</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap');
+        
+        :root {
+            --bg-primary: #0a0e14;
+            --bg-secondary: #151b26;
+            --bg-card: #1e2738;
+            --bg-elevated: #2a3548;
+            --accent-primary: #6366f1;
+            --accent-secondary: #a855f7;
+            --accent-tertiary: #ec4899;
+            --accent-success: #10b981;
+            --accent-warning: #f59e0b;
+            --accent-error: #ef4444;
+            --text-primary: #f1f5f9;
+            --text-secondary: #94a3b8;
+            --text-muted: #64748b;
+            --border-color: #334155;
+            --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
+            --gradient-warm: linear-gradient(135deg, var(--accent-secondary), var(--accent-tertiary));
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Noto Sans JP', 'Outfit', sans-serif;
+            background: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+            overflow-x: hidden;
+        }
+        
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+        
+        /* Screens */
+        .screen {
+            display: none;
+            animation: fadeIn 0.5s ease;
+        }
+        
+        .screen.active {
+            display: block;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Typography */
+        h1 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2.75rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        h2 {
+            font-family: 'Outfit', sans-serif;
+            font-size: 2rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+        
+        h3 {
+            font-size: 1.25rem;
+            font-weight: 500;
+            color: var(--accent-primary);
+            margin-bottom: 0.75rem;
+        }
+        
+        .subtitle {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            margin-bottom: 2.5rem;
+        }
+        
+        /* Cards */
+        .card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 1.75rem;
+            margin-bottom: 1.5rem;
+            border: 1px solid var(--border-color);
+            transition: all 0.3s ease;
+        }
+        
+        .card:hover {
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 30px rgba(99, 102, 241, 0.1);
+        }
+        
+        .card-header {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.25rem;
+        }
+        
+        .card-icon {
+            width: 42px;
+            height: 42px;
+            background: var(--gradient-primary);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.3rem;
+        }
+        
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+        
+        label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            margin-bottom: 0.5rem;
+        }
+        
+        input[type="text"],
+        input[type="number"],
+        select {
+            width: 100%;
+            padding: 0.85rem 1.1rem;
+            font-size: 1rem;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+        }
+        
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+        }
+        
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            border: none;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.25s ease;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+        
+        .btn-primary {
+            background: var(--gradient-primary);
+            color: white;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+        }
+        
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+        }
+        
+        .btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            border: 2px solid var(--border-color);
+        }
+        
+        .btn-secondary:hover {
+            border-color: var(--accent-primary);
+            background: var(--bg-card);
+        }
+        
+        .btn-large {
+            padding: 1.25rem 3.5rem;
+            font-size: 1.15rem;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+        
+        /* Settings Grid */
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 1rem;
+        }
+
+        .setting-value {
+            width: 100%;
+            padding: 0.85rem 1.1rem;
+            font-size: 1rem;
+            font-weight: 600;
+            font-family: inherit;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+        }
+        
+        /* Instructions */
+        .instructions {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 2rem;
+            margin: 2rem 0;
+            border-left: 5px solid var(--accent-primary);
+        }
+        
+        .instructions ul {
+            margin-left: 1.5rem;
+            margin-top: 1rem;
+        }
+        
+        .instructions li {
+            margin-bottom: 0.6rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Objects Display */
+        .objects-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1.5rem;
+            max-width: 700px;
+            margin: 2rem auto;
+        }
+        
+        .object-wrapper {
+            aspect-ratio: 1;
+            background: var(--bg-card);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 3px solid var(--border-color);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .object-wrapper:hover {
+            border-color: var(--accent-primary);
+            transform: scale(1.03);
+        }
+        
+        .object-wrapper.selected {
+            border-color: var(--accent-success);
+            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
+        }
+        
+        .object-wrapper.correct {
+            border-color: var(--accent-success);
+            background: rgba(16, 185, 129, 0.1);
+        }
+        
+        .object-wrapper.incorrect {
+            border-color: var(--accent-error);
+            background: rgba(239, 68, 68, 0.1);
+        }
+        
+        .object-wrapper svg {
+            width: 80%;
+            height: 80%;
+        }
+        
+        .object-number {
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 28px;
+            height: 28px;
+            background: var(--bg-elevated);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+        }
+        
+        /* Word Display */
+        .word-display {
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .current-word {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 3.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            letter-spacing: 0.1em;
+            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
+        }
+        
+        .word-label {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 0.5rem;
+        }
+        
+        /* Words Row (for learning phase) */
+        .words-row {
+            display: flex;
+            justify-content: center;
+            gap: 2rem;
+            flex-wrap: wrap;
+            margin: 1.5rem 0;
+        }
+        
+        .word-item {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 1.5rem;
+            padding: 0.75rem 1.5rem;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            color: var(--text-primary);
+        }
+        
+        .word-item.playing {
+            background: var(--gradient-primary);
+            color: white;
+            animation: wordPulse 0.6s ease;
+        }
+        
+        @keyframes wordPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+        }
+        
+        /* Progress */
+        .progress-container {
+            margin-bottom: 2rem;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--bg-elevated);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: var(--gradient-primary);
+            border-radius: 4px;
+            transition: width 0.4s ease;
+        }
+        
+        .progress-text {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 0.6rem;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+        
+        /* Phase Badge */
+        .phase-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.2rem;
+            background: var(--bg-elevated);
+            border-radius: 25px;
+            font-size: 0.95rem;
+            margin-bottom: 1.5rem;
+        }
+        
+        .phase-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: var(--accent-success);
+            animation: pulseDot 2s infinite;
+        }
+        
+        @keyframes pulseDot {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.6; transform: scale(0.9); }
+        }
+        
+        /* Results */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin: 2rem 0;
+        }
+        
+        .result-card {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
+        }
+        
+        .result-value {
+            font-size: 2.25rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            font-family: 'IBM Plex Mono', monospace;
+        }
+        
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.35rem;
+        }
+        
+        /* Table */
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+        }
+        
+        .results-table th,
+        .results-table td {
+            padding: 0.85rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        .results-table th {
+            background: var(--bg-elevated);
+            color: var(--accent-primary);
+            font-weight: 500;
+        }
+        
+        .results-table tr:hover {
+            background: rgba(99, 102, 241, 0.05);
+        }
+        
+        /* Countdown */
+        .countdown {
+            font-family: 'Outfit', sans-serif;
+            font-size: 8rem;
+            font-weight: 700;
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-align: center;
+            animation: countdownPulse 1s ease infinite;
+        }
+        
+        @keyframes countdownPulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.95); opacity: 0.85; }
+        }
+        
+        /* Fixation */
+        .fixation {
+            font-size: 5rem;
+            color: var(--text-muted);
+            text-align: center;
+        }
+        
+        /* Learning Chart */
+        .chart-container {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin: 1.5rem 0;
+        }
+        
+        .chart-title {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+        }
+        
+        .chart-svg {
+            width: 100%;
+            height: 200px;
+        }
+        
+        /* Audio Status */
+        .audio-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+        
+        .audio-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: var(--accent-success);
+            animation: audioWave 1s ease infinite;
+        }
+        
+        @keyframes audioWave {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.7; }
+        }
+        
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                padding: 1.25rem;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .objects-container {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 1rem;
+            }
+            
+            .current-word {
+                font-size: 2.5rem;
+            }
+            
+            .words-row {
+                gap: 1rem;
+            }
+            
+            .word-item {
+                font-size: 1.1rem;
+                padding: 0.5rem 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Welcome Screen -->
+        <div id="welcome-screen" class="screen active">
+            <h1>Cross-Situational Learning</h1>
+            <p class="subtitle">音声の単語と物体の対応を学習します</p>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">👤</div>
+                    <h3>参加者情報</h3>
+                </div>
+                <div class="form-group">
+                    <label for="participant-id">参加者ID</label>
+                    <input type="text" id="participant-id" placeholder="例: P001">
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">🔊</div>
+                    <h3>音声</h3>
+                </div>
+                <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">
+                    音声のみで実施します。音量を確認してください。
+                </p>
+                <div>
+                    <button class="btn btn-secondary" onclick="testAudio()">🔊 音声テスト</button>
+                    <span id="audio-test-status" style="margin-left: 1rem; color: var(--text-muted);"></span>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon">⚙️</div>
+                    <h3>設定</h3>
+                </div>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label>難易度</label>
+                        <div class="setting-value" id="setting-difficulty">4×4</div>
+                    </div>
+                    <div class="form-group">
+                        <label>単語-物体ペア数</label>
+                        <div class="setting-value" id="setting-num-pairs">18</div>
+                    </div>
+                    <div class="form-group">
+                        <label>各ペアの出現回数</label>
+                        <div class="setting-value" id="setting-repetitions">6</div>
+                    </div>
+                    <div class="form-group">
+                        <label>試行時間 (ms)</label>
+                        <div class="setting-value" id="setting-trial-duration">6000</div>
+                    </div>
+                    <div class="form-group">
+                        <label>単語間間隔 (ms)</label>
+                        <div class="setting-value" id="setting-word-interval">1200</div>
+                    </div>
+                    <div class="form-group">
+                        <label>試行間間隔 (ms)</label>
+                        <div class="setting-value" id="setting-iti">1000</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div style="margin-top: 2.5rem; text-align: center;">
+                <button class="btn btn-primary btn-large" id="start-experiment" onclick="startExperiment()" disabled>
+                    実験を開始 →
+                </button>
+            </div>
+        </div>
+        
+        <!-- Instructions Screen -->
+        <div id="instructions-screen" class="screen">
+            <h2>進め方</h2>
+            
+            <div class="instructions">
+                <h3>学習</h3>
+                <ul>
+                    <li>画面に4つの物体が表示されます</li>
+                    <li>単語が4つ音声で流れます</li>
+                    <li>1回の試行だけでは対応は分かりません</li>
+                    <li>繰り返しの中で対応を学習してください</li>
+                </ul>
+            </div>
+            
+            <div class="instructions">
+                <h3>テスト</h3>
+                <ul>
+                    <li>単語が1つ流れます</li>
+                    <li>正しい物体を選んでください（クリック/1〜4キー）</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary btn-large" onclick="startLearning()">
+                    学習を開始
+                </button>
+            </div>
+        </div>
+        
+        <!-- Learning Phase -->
+        <div id="learning-screen" class="screen">
+            <div class="phase-badge">
+                <span class="phase-dot"></span>
+                学習
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="learning-progress"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="learning-counter">試行 1 / 27</span>
+                    <span id="learning-hint">対応を学習</span>
+                </div>
+            </div>
+            
+            <div class="objects-container" id="learning-objects">
+                <!-- Objects will be inserted here -->
+            </div>
+            
+            <div class="audio-status" id="learning-audio-status" style="justify-content: center; margin-top: 1.5rem;">
+                <div class="audio-icon"></div>
+                <span>単語の音声が順に流れます</span>
+            </div>
+        </div>
+        
+        <!-- 4AFC Instructions -->
+        <div id="afc-instructions-screen" class="screen">
+            <h2>テスト</h2>
+            
+            <div class="instructions">
+                <h3>やること</h3>
+                <ul>
+                    <li>単語が1つ流れます</li>
+                    <li>正しい物体を選んでください</li>
+                    <li>クリックか1〜4キーで選択できます</li>
+                </ul>
+            </div>
+            
+            <div style="text-align: center; margin-top: 2rem;">
+                <button class="btn btn-primary btn-large" onclick="startAFCTest()">
+                    テストを開始
+                </button>
+            </div>
+        </div>
+        
+        <!-- 4AFC Test -->
+        <div id="afc-screen" class="screen">
+            <div class="phase-badge">
+                <span class="phase-dot"></span>
+                テスト
+            </div>
+            
+            <div class="progress-container">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="afc-progress"></div>
+                </div>
+                <div class="progress-text">
+                    <span id="afc-counter">1 / 36</span>
+                    <span>正しい物体を選択</span>
+                </div>
+            </div>
+            
+            <div class="word-display">
+                <div class="word-label">音声が終わったら正しい物体を選んでください</div>
+                <div class="audio-status" id="audio-status" style="justify-content: center; margin-top: 0.5rem;">
+                    <div class="audio-icon"></div>
+                    <span>再生中...</span>
+                </div>
+            </div>
+            
+            <div class="objects-container" id="afc-objects">
+                <!-- 4 objects will be displayed here -->
+            </div>
+            
+        </div>
+        
+        <!-- Countdown -->
+        <div id="countdown-screen" class="screen">
+            <div style="text-align: center; margin-top: 5rem;">
+                <p class="subtitle">開始まで</p>
+                <div id="countdown-number" class="countdown">3</div>
+            </div>
+        </div>
+        
+        <!-- Results Screen -->
+        <div id="results-screen" class="screen">
+            <h2>実験完了 🎉</h2>
+            <p class="subtitle">ご協力ありがとうございました</p>
+            <p class="subtitle" id="download-status">結果データを自動でダウンロードします。始まらない場合は下のボタンを押してください。</p>
+            
+            <div class="results-grid" id="main-results">
+                <!-- Results will be inserted here -->
+            </div>
+            
+            <div class="card">
+                <h3>学習曲線</h3>
+                <div class="chart-container">
+                    <svg id="learning-chart" class="chart-svg"></svg>
+                </div>
+            </div>
+            
+            <div class="card">
+                <h3>詳細結果</h3>
+                <table class="results-table" id="detailed-results">
+                    <!-- Detailed results -->
+                </table>
+            </div>
+            
+            <div class="btn-group" style="justify-content: center; margin-top: 2rem;">
+                <button class="btn btn-primary" onclick="downloadData()">
+                    📊 データをダウンロード (CSV)
+                </button>
+                <button class="btn btn-secondary" onclick="downloadWorkbook()">
+                    📑 データ+サマリー (Excel)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="CSSL_Task.js"></script>
+</body>
+</html>
