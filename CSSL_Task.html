@@ -579,7 +579,7 @@
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="screen active">
             <h1>Cross-Situational Learning</h1>
-            <p class="subtitle">音声の単語と物体の対応を学習します</p>
+            <p class="subtitle">音声だけを頼りに、単語と物体の対応を学習します</p>
             
             <div class="card">
                 <div class="card-header">
@@ -598,44 +598,11 @@
                     <h3>音声</h3>
                 </div>
                 <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">
-                    音声のみで実施します。音量を確認してください。
+                    静かな環境で、音声がはっきり聞こえる音量に調整してください（ヘッドホン推奨）。
                 </p>
                 <div>
                     <button class="btn btn-secondary" onclick="testAudio()">🔊 音声テスト</button>
                     <span id="audio-test-status" style="margin-left: 1rem; color: var(--text-muted);"></span>
-                </div>
-            </div>
-            
-            <div class="card">
-                <div class="card-header">
-                    <div class="card-icon">⚙️</div>
-                    <h3>設定</h3>
-                </div>
-                <div class="settings-grid">
-                    <div class="form-group">
-                        <label>難易度</label>
-                        <div class="setting-value" id="setting-difficulty">4×4</div>
-                    </div>
-                    <div class="form-group">
-                        <label>単語-物体ペア数</label>
-                        <div class="setting-value" id="setting-num-pairs">18</div>
-                    </div>
-                    <div class="form-group">
-                        <label>各ペアの出現回数</label>
-                        <div class="setting-value" id="setting-repetitions">6</div>
-                    </div>
-                    <div class="form-group">
-                        <label>試行時間 (ms)</label>
-                        <div class="setting-value" id="setting-trial-duration">6000</div>
-                    </div>
-                    <div class="form-group">
-                        <label>単語間間隔 (ms)</label>
-                        <div class="setting-value" id="setting-word-interval">1200</div>
-                    </div>
-                    <div class="form-group">
-                        <label>試行間間隔 (ms)</label>
-                        <div class="setting-value" id="setting-iti">1000</div>
-                    </div>
                 </div>
             </div>
             
@@ -653,10 +620,9 @@
             <div class="instructions">
                 <h3>学習</h3>
                 <ul>
-                    <li>画面に4つの物体が表示されます</li>
-                    <li>単語が4つ音声で流れます</li>
-                    <li>1回の試行だけでは対応は分かりません</li>
-                    <li>繰り返しの中で対応を学習してください</li>
+                    <li>毎回、4つの物体を見ながら4つの単語を聞きます</li>
+                    <li>単語と物体の組み合わせは、繰り返しの中で見えてきます</li>
+                    <li>画面を見続け、音声に集中してください</li>
                 </ul>
             </div>
             
@@ -664,7 +630,9 @@
                 <h3>テスト</h3>
                 <ul>
                     <li>単語が1つ流れます</li>
-                    <li>正しい物体を選んでください（クリック/1〜4キー）</li>
+                    <li>音声が終わってから、最も合う物体を選んでください</li>
+                    <li>クリックまたは1〜4キーで回答できます</li>
+                    <li>正確さ優先。迷ったら直感で選んでください</li>
                 </ul>
             </div>
             
@@ -688,7 +656,7 @@
                 </div>
                 <div class="progress-text">
                     <span id="learning-counter">試行 1 / 27</span>
-                    <span id="learning-hint">対応を学習</span>
+                    <span id="learning-hint">音声に集中して対応を見つける</span>
                 </div>
             </div>
             
@@ -698,7 +666,7 @@
             
             <div class="audio-status" id="learning-audio-status" style="justify-content: center; margin-top: 1.5rem;">
                 <div class="audio-icon"></div>
-                <span>単語の音声が順に流れます</span>
+                <span>音声に集中し、4つの物体を見比べてください</span>
             </div>
         </div>
         
@@ -710,8 +678,9 @@
                 <h3>やること</h3>
                 <ul>
                     <li>単語が1つ流れます</li>
-                    <li>正しい物体を選んでください</li>
-                    <li>クリックか1〜4キーで選択できます</li>
+                    <li>音声が終わってから、最も合う物体を選びます</li>
+                    <li>クリックまたは1〜4キーで回答できます</li>
+                    <li>正確さを優先し、迷ったら直感でOKです</li>
                 </ul>
             </div>
             
@@ -735,12 +704,12 @@
                 </div>
                 <div class="progress-text">
                     <span id="afc-counter">1 / 36</span>
-                    <span>正しい物体を選択</span>
+                    <span>音声終了後に選択</span>
                 </div>
             </div>
             
             <div class="word-display">
-                <div class="word-label">音声が終わったら正しい物体を選んでください</div>
+                <div class="word-label">音声が終わってから最も合う物体を選んでください</div>
                 <div class="audio-status" id="audio-status" style="justify-content: center; margin-top: 0.5rem;">
                     <div class="audio-icon"></div>
                     <span>再生中...</span>
