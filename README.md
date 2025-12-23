@@ -46,13 +46,16 @@ with a 4AFC recognition test.
 
 Auto-download at the end:
 
-- CSV: detailed trial data (UTF-8 BOM, Excel-friendly).
-- Excel (`.xlsx`): two sheets (`Data`, `Summary`).
+- Excel (`.xlsx`) only, with multiple sheets:
+  - `Data`: test trial data.
+  - `LearningTrials`: learning-phase trials (for co-occurrence analysis).
+  - `FoilProbability`: word–object co-occurrence counts/probabilities per test option.
+  - `Summary`: overall accuracy, chance-corrected accuracy, mean RT, pair-wise results, and test order.
 
-Manual download buttons are also available on the results screen. Some browsers
-may block multiple automatic downloads; allow them or use the manual buttons.
+Manual download buttons (if shown) export the same Excel workbook. Some browsers
+may block automatic downloads; allow them or use the manual button.
 
-Key CSV columns:
+Key Data-sheet columns:
 
 - `seed`: random seed used for reproducibility.
 - `block`, `blockTrial`, `trial`: test indexing.
