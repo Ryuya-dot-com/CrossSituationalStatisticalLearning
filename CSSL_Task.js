@@ -981,16 +981,6 @@
         const correct = pairId === trial.targetPairId;
         const position = trial.options.indexOf(pairId) + 1;
         
-        // Visual feedback
-        document.querySelectorAll('.object-wrapper').forEach(el => {
-            if (parseInt(el.dataset.pairId) === pairId) {
-                el.classList.add(correct ? 'correct' : 'incorrect');
-            }
-            if (parseInt(el.dataset.pairId) === trial.targetPairId && !correct) {
-                el.classList.add('correct');
-            }
-        });
-        
         // Record data
         STATE.afcData.push({
             seed: STATE.randomSeed,
@@ -1198,20 +1188,121 @@
         if (STATE.autoDownloaded) return;
         STATE.autoDownloaded = true;
 
-        setDownloadStatus('結果データをダウンロードしています...');
+        setDownloadStatus('Excel結果をダウンロードしています...');
 
         setTimeout(() => {
             try {
-                downloadData();
                 downloadWorkbook();
                 setTimeout(() => {
-                    setDownloadStatus('ダウンロードが始まらない場合は下のボタンを押してください。');
+                    setDownloadStatus('Excelのダウンロードが始まらない場合は下のボタンを押してください。');
                 }, 600);
             } catch (e) {
                 console.error('Auto download failed:', e);
-                setDownloadStatus('自動ダウンロードに失敗しました。下のボタンから保存してください。');
+                setDownloadStatus('Excelの自動ダウンロードに失敗しました。下のボタンから保存してください。');
             }
         }, 200);
+    }
+
+    function buildCooccurrenceIndex() {
+        const wordTotals = new Map();
+        const wordObjectCounts = new Map();
+
+        STATE.learningTrials.forEach(trial => {
+            const words = new Set(trial.words || []);
+            const objects = new Set(trial.objects || []);
+
+            words.forEach(word => {
+                wordTotals.set(word, (wordTotals.get(word) || 0) + 1);
+                let objMap = wordObjectCounts.get(word);
+                if (!objMap) {
+                    objMap = new Map();
+                    wordObjectCounts.set(word, objMap);
+                }
+                objects.forEach(objIdx => {
+                    objMap.set(objIdx, (objMap.get(objIdx) || 0) + 1);
+                });
+            });
+        });
+
+        return { wordTotals, wordObjectCounts };
+    }
+
+    function buildLearningTrialsTable() {
+        const headers = [
+            'trialNum', 'pairIds', 'objectIndices', 'wordsInTrial', 'wordOrder', 'repList'
+        ];
+
+        const rows = STATE.learningTrials.map(trial => {
+            const pairIds = (trial.pairs || []).map(p => p.pairId).join('|');
+            const objectIndices = (trial.objects || []).join('|');
+            const wordsInTrial = (trial.pairs || []).map(p => p.word).join('|');
+            const wordOrder = (trial.words || []).join('|');
+            const repList = (trial.pairs || []).map(p => p.rep).join('|');
+            return [
+                trial.trialNum ?? '',
+                pairIds,
+                objectIndices,
+                wordsInTrial,
+                wordOrder,
+                repList
+            ];
+        });
+
+        return { headers, rows };
+    }
+
+    function buildFoilProbabilityTable() {
+        const { wordTotals, wordObjectCounts } = buildCooccurrenceIndex();
+        const headers = [
+            'participantId', 'seed', 'block', 'blockTrial', 'trial',
+            'targetPairId', 'targetWord', 'targetObjectIndex',
+            'optionIndex', 'optionPairId', 'optionWord', 'optionObjectIndex',
+            'isTarget', 'cooccurCount', 'wordTrialCount', 'cooccurProb'
+        ];
+
+        const rows = [];
+
+        STATE.afcData.forEach(trial => {
+            const optionPairIds = [
+                trial.option1PairId,
+                trial.option2PairId,
+                trial.option3PairId,
+                trial.option4PairId
+            ];
+            const totalTrials = wordTotals.get(trial.targetWord) || 0;
+            const countsForWord = wordObjectCounts.get(trial.targetWord);
+
+            optionPairIds.forEach((pairId, index) => {
+                const pair = STATE.pairMap.get(pairId);
+                const optionWord = pair ? pair.word : '';
+                const optionObjectIndex = pair ? pair.objectIndex : '';
+                const count = countsForWord && optionObjectIndex !== '' ?
+                    (countsForWord.get(optionObjectIndex) || 0) : 0;
+                const prob = totalTrials ? (count / totalTrials) : '';
+                const isTarget = pairId === trial.targetPairId ? 1 : 0;
+
+                rows.push([
+                    CONFIG.participantId,
+                    trial.seed ?? '',
+                    trial.block ?? '',
+                    trial.blockTrial ?? '',
+                    trial.trial ?? '',
+                    trial.targetPairId ?? '',
+                    trial.targetWord ?? '',
+                    trial.targetObjectIndex ?? '',
+                    index + 1,
+                    pairId ?? '',
+                    optionWord,
+                    optionObjectIndex,
+                    isTarget,
+                    count,
+                    totalTrials,
+                    prob
+                ]);
+            });
+        });
+
+        return { headers, rows };
     }
 
     function buildDataTable() {
@@ -1288,36 +1379,37 @@ ${STATE.afcTrials.map(trial => {
     }
     
     function downloadData() {
-        const { headers, rows } = buildDataTable();
-        const csv = [headers.join(','), ...rows.map(r => r.map(toCsvValue).join(','))].join('\r\n');
-        
-        const safeParticipantId = sanitizeFilename(CONFIG.participantId);
-        downloadFile(csv, `CSSL_${safeParticipantId}_${formatDate()}.csv`, 'text/csv;charset=utf-8', true);
+        console.warn('CSV export disabled: Excel output only.');
+        downloadWorkbook();
     }
     
     function downloadSummary() {
-        const summary = buildSummaryText();
-        
-        const safeParticipantId = sanitizeFilename(CONFIG.participantId);
-        downloadFile(summary, `CSSL_Summary_${safeParticipantId}_${formatDate()}.txt`, 'text/plain;charset=utf-8', true);
+        console.warn('Summary text export disabled: Excel output only.');
+        downloadWorkbook();
     }
 
     function downloadWorkbook() {
         if (typeof XLSX === 'undefined') {
-            console.warn('XLSX library not available. Falling back to summary text.');
-            downloadSummary();
+            console.warn('XLSX library not available. Excel export cannot proceed.');
+            setDownloadStatus('✗ Excel出力に必要なXLSXライブラリが見つかりません。');
             return;
         }
 
         const { headers, rows } = buildDataTable();
         const summaryText = buildSummaryText();
         const summaryLines = summaryText.split('\n').map(line => [line]);
+        const learningTable = buildLearningTrialsTable();
+        const foilTable = buildFoilProbabilityTable();
 
         const workbook = XLSX.utils.book_new();
         const dataSheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
         const summarySheet = XLSX.utils.aoa_to_sheet(summaryLines);
+        const learningSheet = XLSX.utils.aoa_to_sheet([learningTable.headers, ...learningTable.rows]);
+        const foilSheet = XLSX.utils.aoa_to_sheet([foilTable.headers, ...foilTable.rows]);
 
         XLSX.utils.book_append_sheet(workbook, dataSheet, 'Data');
+        XLSX.utils.book_append_sheet(workbook, learningSheet, 'LearningTrials');
+        XLSX.utils.book_append_sheet(workbook, foilSheet, 'FoilProbability');
         XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
         const output = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
