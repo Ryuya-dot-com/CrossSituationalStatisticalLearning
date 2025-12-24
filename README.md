@@ -71,7 +71,7 @@ Practice audio mapping:
 - check_11: orange
 - check_12: potato
 
-Hosting note: practice audio is loaded from `./audio_check` by default and
+Hosting note: practice audio is loaded from `audio_check` by default and
 falls back to `../audio_check` if needed. Ensure one of these paths exists
 relative to `index.html` so `check_*.mp3` is reachable.
    - Options are precomputed per block:

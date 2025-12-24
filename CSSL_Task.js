@@ -15,7 +15,7 @@
         audioExtension: 'mp3'
     };
 
-    const TASK_VERSION = '1.4.0';
+    const TASK_VERSION = '1.4.1';
 
     const AFC_KEYS = ['d', 'f', 'j', 'k'];
     const AFC_KEY_LABELS = ['D', 'F', 'J', 'K'];
@@ -40,7 +40,7 @@
     const PRACTICE_CONFIG = {
         enabled: true,
         trials: 12,
-        audioBasePath: './audio_check',
+        audioBasePath: 'audio_check',
         audioBasePathFallback: '../audio_check',
         audioExtension: 'mp3'
     };
