@@ -71,8 +71,9 @@ Practice audio mapping:
 - check_11: orange
 - check_12: potato
 
-Hosting note: ensure `audio_check/` is served alongside this task so
-`../audio_check/check_*.mp3` is reachable from `index.html`.
+Hosting note: practice audio is loaded from `./audio_check` by default and
+falls back to `../audio_check` if needed. Ensure one of these paths exists
+relative to `index.html` so `check_*.mp3` is reachable.
    - Options are precomputed per block:
      - Target position is balanced across the 4 slots.
      - Distractors are balanced within a block.

@@ -40,7 +40,8 @@
     const PRACTICE_CONFIG = {
         enabled: true,
         trials: 12,
-        audioBasePath: '../audio_check',
+        audioBasePath: './audio_check',
+        audioBasePathFallback: '../audio_check',
         audioExtension: 'mp3'
     };
 
@@ -600,7 +601,31 @@
 
     function preloadPracticeAudio() {
         const ids = PRACTICE_ITEMS.map(item => item.id);
-        return preloadAudioFiles(ids, PRACTICE_CONFIG.audioBasePath, PRACTICE_CONFIG.audioExtension, PRACTICE_AUDIO_CACHE);
+        return preloadAudioFiles(ids, PRACTICE_CONFIG.audioBasePath, PRACTICE_CONFIG.audioExtension, PRACTICE_AUDIO_CACHE)
+            .then((results) => {
+                const missing = results.filter(result => !result.ok);
+                if (missing.length === ids.length && PRACTICE_CONFIG.audioBasePathFallback) {
+                    const fallbackCache = new Map();
+                    return preloadAudioFiles(
+                        ids,
+                        PRACTICE_CONFIG.audioBasePathFallback,
+                        PRACTICE_CONFIG.audioExtension,
+                        fallbackCache
+                    ).then((fallbackResults) => {
+                        const fallbackMissing = fallbackResults.filter(result => !result.ok);
+                        if (fallbackMissing.length < missing.length) {
+                            PRACTICE_AUDIO_CACHE.clear();
+                            fallbackCache.forEach((value, key) => {
+                                PRACTICE_AUDIO_CACHE.set(key, value);
+                            });
+                            PRACTICE_CONFIG.audioBasePath = PRACTICE_CONFIG.audioBasePathFallback;
+                            return fallbackResults;
+                        }
+                        return results;
+                    });
+                }
+                return results;
+            });
     }
     
     function testAudio() {
