@@ -15,7 +15,7 @@
         audioExtension: 'mp3'
     };
 
-    const TASK_VERSION = '1.3.0';
+    const TASK_VERSION = '1.4.0';
 
     const AFC_KEYS = ['d', 'f', 'j', 'k'];
     const AFC_KEY_LABELS = ['D', 'F', 'J', 'K'];
@@ -35,6 +35,28 @@
         "golit", "hismo", "jober", "lunto", "moffy", "nalip",
         "pimwit", "regli", "sumbat", "tever", "vosek", "wugson",
         "blicket", "gazzer", "toma", "ziffin", "cheem", "noba"
+    ];
+
+    const PRACTICE_CONFIG = {
+        enabled: true,
+        trials: 12,
+        audioBasePath: '../audio_check',
+        audioExtension: 'mp3'
+    };
+
+    const PRACTICE_ITEMS = [
+        { id: 'check_1', label: 'apple' },
+        { id: 'check_2', label: 'banana' },
+        { id: 'check_3', label: 'cat' },
+        { id: 'check_4', label: 'carrot' },
+        { id: 'check_5', label: 'bird' },
+        { id: 'check_6', label: 'cherry' },
+        { id: 'check_7', label: 'dog' },
+        { id: 'check_8', label: 'fish' },
+        { id: 'check_9', label: 'grape' },
+        { id: 'check_10', label: 'rabbit' },
+        { id: 'check_11', label: 'orange' },
+        { id: 'check_12', label: 'potato' }
     ];
     
     // ========================================
@@ -357,12 +379,17 @@
         learningTrials: [],
         learningTrialLogs: [],
         learningWordEvents: [],
+        practiceTrials: [],
+        practiceData: [],
         afcData: [],
         afcTrials: [],
 
         currentTrialIndex: 0,
         currentTestIndex: 0,
+        currentPracticeIndex: 0,
         currentLearningTrialLog: null,
+        currentPracticeTrial: null,
+        practiceAwaitingResponse: false,
 
         experimentStartTime: null,
         experimentStartPerf: null,
@@ -372,7 +399,9 @@
         wordMap: new Map(),
         audioPreloadComplete: false,
         audioPreloadOk: false,
-        audioMissing: []
+        audioMissing: [],
+        practiceAudioPreloadOk: false,
+        practiceAudioMissing: []
     };
     
     // ========================================
@@ -412,6 +441,39 @@
         document.getElementById(id).classList.add('active');
     }
 
+    function ensurePracticeScreens() {
+        if (document.getElementById('practice-instructions-screen')) return;
+        const host = document.querySelector('.screen')?.parentElement || document.body;
+        const screen = document.createElement('div');
+        screen.id = 'practice-instructions-screen';
+        screen.className = 'screen';
+        screen.innerHTML = `
+            <div class="screen-content">
+                <h2>練習セッション</h2>
+                <p>本番の学習に入る前に、キーボード操作の練習を行います。</p>
+                <div class="instruction-card">
+                    <h3>操作方法</h3>
+                    <p>左手は <strong>D・F</strong>、右手は <strong>J・K</strong> に置いてください。</p>
+                    <p>画面の各選択肢には <strong>D / F / J / K</strong> のラベルが表示されます。</p>
+                    <p>音声が終わったら、聞こえた英単語に対応するラベルのキーを押してください。</p>
+                    <p>マウスは使わず、指はキーから離さないでください。</p>
+                </div>
+                <button class="btn" onclick="startPractice()">練習を開始</button>
+            </div>
+        `;
+        host.appendChild(screen);
+    }
+
+    function ensureInstructionHints() {
+        const afcScreen = document.getElementById('afc-instructions-screen');
+        if (afcScreen && !afcScreen.querySelector('.afc-key-hint')) {
+            const hint = document.createElement('p');
+            hint.className = 'afc-key-hint';
+            hint.textContent = '回答は D / F / J / K のキーボード入力のみです。';
+            afcScreen.appendChild(hint);
+        }
+    }
+
     function applyDefaultSettingsDisplay() {
         const setText = (id, value) => {
             const el = document.getElementById(id);
@@ -433,27 +495,35 @@
     // ========================================
     
     const AUDIO_CACHE = new Map();
+    const PRACTICE_AUDIO_CACHE = new Map();
     let activeAudio = null;
-    
-    function getAudioForWord(word) {
-        const key = word.toLowerCase();
-        if (!AUDIO_CACHE.has(key)) {
-            const audio = new Audio(`${CONFIG.audioBasePath}/${key}.${CONFIG.audioExtension}`);
+
+    function getAudioForKey(key, basePath, extension, cache) {
+        const normalized = String(key || '').toLowerCase();
+        if (!cache.has(normalized)) {
+            const audio = new Audio(`${basePath}/${normalized}.${extension}`);
             audio.preload = 'auto';
-            AUDIO_CACHE.set(key, audio);
+            cache.set(normalized, audio);
         }
-        return AUDIO_CACHE.get(key);
+        return cache.get(normalized);
     }
-    
-    function playAudio(word, callback, onStart) {
-        const audio = getAudioForWord(word);
+
+    function getAudioForWord(word) {
+        return getAudioForKey(word, CONFIG.audioBasePath, CONFIG.audioExtension, AUDIO_CACHE);
+    }
+
+    function getPracticeAudio(id) {
+        return getAudioForKey(id, PRACTICE_CONFIG.audioBasePath, PRACTICE_CONFIG.audioExtension, PRACTICE_AUDIO_CACHE);
+    }
+
+    function playAudioElement(audio, callback, onStart) {
         if (activeAudio && activeAudio !== audio) {
             activeAudio.pause();
             activeAudio.currentTime = 0;
         }
         activeAudio = audio;
         audio.currentTime = 0;
-        
+
         let finished = false;
         let started = false;
         const markStarted = () => {
@@ -485,22 +555,32 @@
             markStarted();
         }).catch(() => finish(false));
     }
-    
-    function preloadAudio(words) {
-        const uniqueWords = Array.from(new Set(words.map(word => word.toLowerCase())));
-        const preloaders = uniqueWords.map((word) => {
-            const audio = getAudioForWord(word);
+
+    function playAudio(word, callback, onStart) {
+        const audio = getAudioForWord(word);
+        playAudioElement(audio, callback, onStart);
+    }
+
+    function playPracticeAudio(id, callback, onStart) {
+        const audio = getPracticeAudio(id);
+        playAudioElement(audio, callback, onStart);
+    }
+
+    function preloadAudioFiles(keys, basePath, extension, cache) {
+        const uniqueKeys = Array.from(new Set(keys.map(key => String(key || '').toLowerCase())));
+        const preloaders = uniqueKeys.map((key) => {
+            const audio = getAudioForKey(key, basePath, extension, cache);
             if (audio.readyState >= 2) {
-                return Promise.resolve({ word, ok: true });
+                return Promise.resolve({ key, ok: true });
             }
             return new Promise((resolve) => {
                 const onReady = () => {
                     cleanup();
-                    resolve({ word, ok: true });
+                    resolve({ key, ok: true });
                 };
                 const onError = () => {
                     cleanup();
-                    resolve({ word, ok: false });
+                    resolve({ key, ok: false });
                 };
                 const cleanup = () => {
                     audio.removeEventListener('canplaythrough', onReady);
@@ -513,6 +593,15 @@
         });
         return Promise.all(preloaders);
     }
+
+    function preloadAudio(words) {
+        return preloadAudioFiles(words, CONFIG.audioBasePath, CONFIG.audioExtension, AUDIO_CACHE);
+    }
+
+    function preloadPracticeAudio() {
+        const ids = PRACTICE_ITEMS.map(item => item.id);
+        return preloadAudioFiles(ids, PRACTICE_CONFIG.audioBasePath, PRACTICE_CONFIG.audioExtension, PRACTICE_AUDIO_CACHE);
+    }
     
     function testAudio() {
         const status = document.getElementById('audio-test-status');
@@ -524,8 +613,12 @@
         playAudio(PSEUDOWORDS[0], (ok) => {
             if (!status) return;
             if (ok) {
-                if (STATE.audioPreloadComplete && !STATE.audioPreloadOk) {
-                    status.textContent = `✗ 音声ファイル不足: ${STATE.audioMissing.length}件`;
+                const practiceMissing = PRACTICE_CONFIG.enabled && !STATE.practiceAudioPreloadOk;
+                if (STATE.audioPreloadComplete && (!STATE.audioPreloadOk || practiceMissing)) {
+                    const parts = [];
+                    if (!STATE.audioPreloadOk) parts.push(`本試行:${STATE.audioMissing.length}件`);
+                    if (practiceMissing) parts.push(`練習:${STATE.practiceAudioMissing.length}件`);
+                    status.textContent = `✗ 音声ファイル不足: ${parts.join(' / ')}`;
                     status.style.color = 'var(--accent-error)';
                 } else {
                     status.textContent = '✓ 音声OK';
@@ -553,13 +646,20 @@
         }
         setStartButtonEnabled(false);
 
-        preloadAudio(PSEUDOWORDS).then((results) => {
-            const missing = results.filter(r => !r.ok).map(r => r.word);
-            STATE.audioPreloadComplete = true;
-            STATE.audioMissing = missing;
-            STATE.audioPreloadOk = missing.length === 0;
+        const mainPromise = preloadAudio(PSEUDOWORDS);
+        const practicePromise = PRACTICE_CONFIG.enabled ? preloadPracticeAudio() : Promise.resolve([]);
 
-            if (missing.length === 0) {
+        Promise.all([mainPromise, practicePromise]).then(([mainResults, practiceResults]) => {
+            const missingMain = mainResults.filter(r => !r.ok).map(r => r.key);
+            const missingPractice = practiceResults.filter(r => !r.ok).map(r => r.key);
+            STATE.audioPreloadComplete = true;
+            STATE.audioMissing = missingMain;
+            STATE.audioPreloadOk = missingMain.length === 0;
+            STATE.practiceAudioMissing = missingPractice;
+            STATE.practiceAudioPreloadOk = missingPractice.length === 0;
+
+            const allOk = STATE.audioPreloadOk && STATE.practiceAudioPreloadOk;
+            if (allOk) {
                 if (status) {
                     status.textContent = '✓ 音声OK';
                     status.style.color = 'var(--accent-success)';
@@ -567,16 +667,26 @@
                 setStartButtonEnabled(true);
             } else {
                 if (status) {
-                    status.textContent = `✗ 音声ファイル不足: ${missing.length}件`;
+                    const parts = [];
+                    if (missingMain.length > 0) parts.push(`本試行:${missingMain.length}件`);
+                    if (PRACTICE_CONFIG.enabled && missingPractice.length > 0) {
+                        parts.push(`練習:${missingPractice.length}件`);
+                    }
+                    const detail = parts.length ? parts.join(' / ') : `${missingMain.length + missingPractice.length}件`;
+                    status.textContent = `✗ 音声ファイル不足: ${detail}`;
                     status.style.color = 'var(--accent-error)';
                 }
-                console.warn('Missing audio files:', missing);
+                console.warn('Missing audio files:', {
+                    main: missingMain,
+                    practice: missingPractice
+                });
                 setStartButtonEnabled(false);
             }
         }).catch((error) => {
             console.error('Audio preload failed:', error);
             STATE.audioPreloadComplete = true;
             STATE.audioPreloadOk = false;
+            STATE.practiceAudioPreloadOk = false;
             if (status) {
                 status.textContent = '✗ 音声の確認に失敗しました';
                 status.style.color = 'var(--accent-error)';
@@ -593,7 +703,7 @@
         // Gather config
         CONFIG.participantId = document.getElementById('participant-id').value || 'P000';
 
-        if (!STATE.audioPreloadOk) {
+        if (!STATE.audioPreloadOk || (PRACTICE_CONFIG.enabled && !STATE.practiceAudioPreloadOk)) {
             const status = document.getElementById('audio-test-status');
             if (status) {
                 status.textContent = '✗ 音声ファイルを確認してください';
@@ -613,8 +723,15 @@
         if (!generateLearningTrials()) {
             return;
         }
-        
-        showScreen('instructions-screen');
+
+        ensurePracticeScreens();
+        ensureInstructionHints();
+
+        if (PRACTICE_CONFIG.enabled) {
+            showScreen('practice-instructions-screen');
+        } else {
+            showScreen('instructions-screen');
+        }
     }
     
     function generatePairs() {
@@ -880,6 +997,123 @@
         }
 
         return null;
+    }
+
+    // ========================================
+    // Practice Phase (Keyboard Familiarization)
+    // ========================================
+
+    function generatePracticeTrials() {
+        const trials = [];
+        const trialCount = Math.max(1, PRACTICE_CONFIG.trials);
+        const targets = shuffleArray(PRACTICE_ITEMS);
+
+        for (let i = 0; i < trialCount; i++) {
+            const target = targets[i % targets.length];
+            const distractors = shuffleArray(
+                PRACTICE_ITEMS.filter(item => item.id !== target.id)
+            ).slice(0, CONFIG.objectsPerTrial - 1);
+            const options = shuffleArray([target, ...distractors]);
+
+            trials.push({
+                trial: i + 1,
+                options,
+                target
+            });
+        }
+
+        return trials;
+    }
+
+    function startPractice() {
+        STATE.phase = 'practice';
+        STATE.currentPracticeIndex = 0;
+        STATE.practiceData = [];
+        STATE.practiceTrials = generatePracticeTrials();
+
+        showCountdown(() => {
+            showScreen('afc-screen');
+            runPracticeTrial();
+        });
+    }
+
+    function runPracticeTrial() {
+        if (STATE.currentPracticeIndex >= STATE.practiceTrials.length) {
+            endPractice();
+            return;
+        }
+
+        const currentTrial = STATE.practiceTrials[STATE.currentPracticeIndex];
+        const total = STATE.practiceTrials.length;
+
+        // Update progress
+        document.getElementById('afc-progress').style.width =
+            `${(STATE.currentPracticeIndex / total) * 100}%`;
+        document.getElementById('afc-counter').textContent =
+            `練習 ${STATE.currentPracticeIndex + 1} / ${total}`;
+
+        // Display options as text labels
+        const container = document.getElementById('afc-objects');
+        container.innerHTML = currentTrial.options.map((item, i) => `
+            <div class="object-wrapper" data-practice-id="${item.id}" data-position="${i + 1}">
+                <span class="object-number">${AFC_KEY_LABELS[i] || ''}</span>
+                <div class="practice-label">${item.label}</div>
+            </div>
+        `).join('');
+
+        const audioStatus = document.getElementById('audio-status');
+        if (audioStatus) {
+            audioStatus.style.display = 'flex';
+        }
+
+        STATE.currentPracticeTrial = {
+            trial: currentTrial.trial,
+            options: currentTrial.options,
+            targetId: currentTrial.target.id,
+            targetLabel: currentTrial.target.label,
+            onsetTime: null
+        };
+
+        STATE.practiceAwaitingResponse = false;
+
+        playPracticeAudio(currentTrial.target.id, (ok) => {
+            if (audioStatus) {
+                audioStatus.style.display = 'none';
+            }
+            STATE.currentPracticeTrial.onsetTime = performance.now();
+            STATE.currentPracticeTrial.audioPlayOk = ok ? 1 : 0;
+            STATE.practiceAwaitingResponse = true;
+        });
+    }
+
+    function selectPracticeObject(optionId, responseSource = '') {
+        if (!STATE.practiceAwaitingResponse) return;
+        STATE.practiceAwaitingResponse = false;
+
+        const trial = STATE.currentPracticeTrial;
+        const responsePerfMs = performance.now();
+        const rtRaw = trial.onsetTime ? (responsePerfMs - trial.onsetTime) : 0;
+        const correct = optionId === trial.targetId;
+
+        STATE.practiceData.push({
+            trial: trial.trial,
+            targetId: trial.targetId,
+            targetLabel: trial.targetLabel,
+            selectedId: optionId,
+            correct: correct ? 1 : 0,
+            rt: Math.round(rtRaw),
+            responseSource
+        });
+
+        setTimeout(() => {
+            STATE.currentPracticeIndex++;
+            runPracticeTrial();
+        }, 400);
+    }
+
+    function endPractice() {
+        STATE.phase = 'instructions';
+        showScreen('instructions-screen');
     }
     
     // ========================================
@@ -1550,6 +1784,13 @@
             ['audioPreloadOk', STATE.audioPreloadOk ? 1 : 0],
             ['audioMissingCount', STATE.audioMissing.length],
             ['audioMissingList', STATE.audioMissing.join('|')],
+            ['practiceEnabled', PRACTICE_CONFIG.enabled ? 1 : 0],
+            ['practiceTrials', PRACTICE_CONFIG.trials],
+            ['practiceAudioBasePath', PRACTICE_CONFIG.audioBasePath],
+            ['practiceAudioExtension', PRACTICE_CONFIG.audioExtension],
+            ['practiceAudioPreloadOk', STATE.practiceAudioPreloadOk ? 1 : 0],
+            ['practiceAudioMissingCount', STATE.practiceAudioMissing.length],
+            ['practiceAudioMissingList', STATE.practiceAudioMissing.join('|')],
             ['userAgent', navigator.userAgent || '']
         ];
         return { headers: ['key', 'value'], rows };
@@ -1928,6 +2169,38 @@ ${STATE.afcTrials.map(trial => {
     // ========================================
     
     document.addEventListener('keydown', (e) => {
+        const activeElement = document.activeElement;
+        const isEditingField = activeElement
+            && (activeElement.tagName === 'INPUT'
+                || activeElement.tagName === 'TEXTAREA'
+                || activeElement.isContentEditable);
+
+        if (e.code === 'Space' && !isEditingField) {
+            const activeId = document.querySelector('.screen.active')?.id;
+            if (activeId === 'welcome-screen') {
+                e.preventDefault();
+                const startButton = document.getElementById('start-experiment');
+                if (startButton && !startButton.disabled) {
+                    startExperiment();
+                }
+                return;
+            }
+            if (activeId === 'practice-instructions-screen') {
+                e.preventDefault();
+                startPractice();
+                return;
+            }
+            if (activeId === 'instructions-screen') {
+                e.preventDefault();
+                startLearning();
+                return;
+            }
+            if (activeId === 'afc-instructions-screen') {
+                e.preventDefault();
+                startAFCTest();
+                return;
+            }
+        }
         // AFC test: D/F/J/K keys to select
         if (STATE.phase === 'afc' && STATE.awaitingAFCResponse) {
             const keyNum = getAFCPositionForKey(e.key);
@@ -1936,6 +2209,18 @@ ${STATE.afcTrials.map(trial => {
                 if (wrapper) {
                     const pairId = parseInt(wrapper.dataset.pairId);
                     selectAFCObject(pairId, 'key');
+                }
+            }
+        }
+        if (STATE.phase === 'practice' && STATE.practiceAwaitingResponse) {
+            const keyNum = getAFCPositionForKey(e.key);
+            if (keyNum) {
+                const wrapper = document.querySelector(`.object-wrapper[data-position="${keyNum}"]`);
+                if (wrapper) {
+                    const optionId = wrapper.dataset.practiceId || '';
+                    if (optionId) {
+                        selectPracticeObject(optionId, 'key');
+                    }
                 }
             }
         }

@@ -6,8 +6,9 @@ with a 4AFC recognition test.
 
 ## Files
 
-- `CSSL_Task.html`: Main experiment UI.
+- `index.html`: Main experiment UI (GitHub Pages entrypoint).
 - `CSSL_Task.js`: Task logic, randomization, data export.
+- `CSSL_Task.html`: Legacy entrypoint (redirects to `index.html`).
 - `audio/`: Pre-generated word audio files (`.mp3`).
 - `generate_cssl_audio.py`: Script to generate audio files with gTTS.
 
@@ -16,7 +17,7 @@ with a 4AFC recognition test.
 1. Generate audio files (requires internet and gTTS):
    - `pip install gTTS`
    - `python3 generate_cssl_audio.py`
-2. Open `CSSL_Task.html` in a browser (or host on GitHub Pages).
+2. Open `index.html` in a browser (or host on GitHub Pages).
 3. Enter a participant ID and start the task.
 
 ## Audio
@@ -29,6 +30,10 @@ with a 4AFC recognition test.
 
 ## Task Flow
 
+0. Practice phase (before learning):
+   - Keyboard practice using common English words.
+   - Audio files are loaded from `../audio_check` (check_1..check_12, 12 trials).
+   - Respond with D/F/J/K keys shown on the options.
 1. Learning phase:
    - 4 objects shown per trial.
    - 4 words played per trial (order shuffled).
@@ -45,6 +50,29 @@ with a 4AFC recognition test.
 - Each object is labeled D/F/J/K; press the matching key.
 - Keep your fingers on the keys and respond as quickly and accurately as possible.
 - Do not use the mouse; responses are collected by keyboard only.
+
+## Participant Instructions (Practice)
+
+- You will hear common English words and see four written options.
+- Press the key (D/F/J/K) that matches the word you heard.
+- This phase is only for keyboard familiarization.
+
+Practice audio mapping:
+- check_1: apple
+- check_2: banana
+- check_3: cat
+- check_4: carrot
+- check_5: bird
+- check_6: cherry
+- check_7: dog
+- check_8: fish
+- check_9: grape
+- check_10: rabbit
+- check_11: orange
+- check_12: potato
+
+Hosting note: ensure `audio_check/` is served alongside this task so
+`../audio_check/check_*.mp3` is reachable from `index.html`.
    - Options are precomputed per block:
      - Target position is balanced across the 4 slots.
      - Distractors are balanced within a block.
@@ -125,5 +153,5 @@ This requires `numPairs >= objectsPerTrial * 2` and
 ## Hosting Notes
 
 For GitHub Pages, ensure `audio/` is included in the published build. If you need
-offline Excel export, replace the CDN `xlsx` script in `CSSL_Task.html` with a
+offline Excel export, replace the CDN `xlsx` script in `index.html` with a
 local copy of the library.
