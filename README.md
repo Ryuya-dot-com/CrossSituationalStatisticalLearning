@@ -31,9 +31,10 @@ with a 4AFC recognition test.
 ## Task Flow
 
 0. Practice phase (before learning):
-   - Keyboard practice using common English words.
-   - Audio files are loaded from `../audio_check` (check_1..check_12, 12 trials).
-   - Respond with D/F/J/K keys shown on the options.
+   - Practice follows the same order as the main task: learning → test.
+   - Learning uses emojis as objects while 4 words are played.
+   - Test plays one word and participants choose the matching emoji (D/F/J/K).
+   - Audio files are loaded from `audio_check` (check_1..check_12, 12 trials).
 1. Learning phase:
    - 4 objects shown per trial.
    - 4 words played per trial (order shuffled).
@@ -50,12 +51,15 @@ with a 4AFC recognition test.
 - Each object is labeled D/F/J/K; press the matching key.
 - Keep your fingers on the keys and respond as quickly and accurately as possible.
 - Do not use the mouse; responses are collected by keyboard only.
+- Screens advance with the space key (no clickable start buttons).
 
 ## Participant Instructions (Practice)
 
-- You will hear common English words and see four written options.
-- Press the key (D/F/J/K) that matches the word you heard.
-- This phase is only for keyboard familiarization.
+- Practice has a short learning phase followed by a test phase.
+- In learning, four emojis appear while four words play.
+- In test, choose the matching emoji using D/F/J/K keys only.
+- This phase is for keyboard familiarization and flow understanding.
+- Screens advance with the space key (no clickable start buttons).
 
 Practice audio mapping:
 - check_1: apple
@@ -70,6 +74,8 @@ Practice audio mapping:
 - check_10: rabbit
 - check_11: orange
 - check_12: potato
+
+Practice displays the corresponding emojis for these words.
 
 Hosting note: practice audio is loaded from `audio_check` by default and
 falls back to `../audio_check` if needed. Ensure one of these paths exists

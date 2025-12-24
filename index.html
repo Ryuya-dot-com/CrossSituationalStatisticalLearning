@@ -316,6 +316,15 @@
             width: 80%;
             height: 80%;
         }
+
+        #afc-screen .object-wrapper {
+            cursor: default;
+        }
+
+        #afc-screen .object-wrapper:hover {
+            border-color: var(--border-color);
+            transform: none;
+        }
         
         .object-number {
             position: absolute;
@@ -339,6 +348,11 @@
             color: var(--text-primary);
             text-align: center;
             padding: 0 0.5rem;
+        }
+
+        .practice-emoji {
+            font-size: 2.6rem;
+            line-height: 1;
         }
         
         /* Word Display */
@@ -630,10 +644,7 @@
             </div>
             
             <div style="margin-top: 2.5rem; text-align: center;">
-                <button class="btn btn-primary btn-large" id="start-experiment" onclick="startExperiment()" disabled>
-                    スペースキーで開始 →
-                </button>
-                <p class="screen-note">スペースキーでも開始できます。</p>
+                <p class="screen-note" id="start-hint">音声を確認中です。準備完了後、スペースキーで開始します。</p>
             </div>
         </div>
 
@@ -642,22 +653,41 @@
             <h2>練習セッション</h2>
 
             <div class="instructions">
-                <h3>目的</h3>
+                <h3>流れ</h3>
                 <ul>
-                    <li>本番前に D / F / J / K キーでの操作に慣れるための短い練習です</li>
-                    <li>英単語の音声が流れます。音声が終わったら対応する単語のキーを押してください</li>
-                    <li>画面の各選択肢に D / F / J / K のラベルが表示されます</li>
+                    <li>練習も「学習 → テスト」の順で進みます</li>
+                    <li>学習では、4つの絵文字を見ながら4つの単語を聞きます</li>
+                    <li>テストでは、1語ずつ聞き、対応する絵文字を選びます</li>
+                </ul>
+            </div>
+
+            <div class="instructions">
+                <h3>操作</h3>
+                <ul>
+                    <li>回答は D / F / J / K のキーボード入力のみです</li>
                     <li>左手は D/F、右手は J/K に置き、指はキーから離さないでください</li>
                     <li>マウスは使わず、キーボードのみで回答します</li>
                 </ul>
             </div>
 
             <p class="screen-note">スペースキーで練習を開始します。</p>
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-primary btn-large" onclick="startPractice()">
-                    スペースキーで練習開始
-                </button>
+        </div>
+
+        <!-- Practice Test Instructions -->
+        <div id="practice-test-instructions-screen" class="screen">
+            <h2>練習テスト</h2>
+
+            <div class="instructions">
+                <h3>やること</h3>
+                <ul>
+                    <li>単語が1つ流れます</li>
+                    <li>音声が終わってから、対応する絵文字を選びます</li>
+                    <li>回答は D / F / J / K のキーボード入力のみです</li>
+                    <li>左手は D/F、右手は J/K に置き、指はキーから離さないでください</li>
+                </ul>
             </div>
+
+            <p class="screen-note">スペースキーで練習テストを開始します。</p>
         </div>
         
         <!-- Instructions Screen -->
@@ -685,11 +715,6 @@
             </div>
 
             <p class="screen-note">スペースキーで学習を開始します。</p>
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-primary btn-large" onclick="startLearning()">
-                    スペースキーで学習開始
-                </button>
-            </div>
         </div>
         
         <!-- Learning Phase -->
@@ -735,11 +760,6 @@
 
             <p class="afc-key-hint">回答は D / F / J / K のキーボード入力のみです。</p>
             <p class="screen-note">スペースキーでテストを開始します。</p>
-            <div style="text-align: center; margin-top: 2rem;">
-                <button class="btn btn-primary btn-large" onclick="startAFCTest()">
-                    スペースキーでテスト開始
-                </button>
-            </div>
         </div>
         
         <!-- 4AFC Test -->
@@ -817,6 +837,6 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="CSSL_Task.js?v=1.4.1"></script>
+    <script src="CSSL_Task.js?v=1.5.1"></script>
 </body>
 </html>

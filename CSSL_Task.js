@@ -15,7 +15,7 @@
         audioExtension: 'mp3'
     };
 
-    const TASK_VERSION = '1.4.1';
+    const TASK_VERSION = '1.5.1';
 
     const AFC_KEYS = ['d', 'f', 'j', 'k'];
     const AFC_KEY_LABELS = ['D', 'F', 'J', 'K'];
@@ -46,18 +46,18 @@
     };
 
     const PRACTICE_ITEMS = [
-        { id: 'check_1', label: 'apple' },
-        { id: 'check_2', label: 'banana' },
-        { id: 'check_3', label: 'cat' },
-        { id: 'check_4', label: 'carrot' },
-        { id: 'check_5', label: 'bird' },
-        { id: 'check_6', label: 'cherry' },
-        { id: 'check_7', label: 'dog' },
-        { id: 'check_8', label: 'fish' },
-        { id: 'check_9', label: 'grape' },
-        { id: 'check_10', label: 'rabbit' },
-        { id: 'check_11', label: 'orange' },
-        { id: 'check_12', label: 'potato' }
+        { id: 'check_1', label: 'apple', emoji: '🍎' },
+        { id: 'check_2', label: 'banana', emoji: '🍌' },
+        { id: 'check_3', label: 'cat', emoji: '🐱' },
+        { id: 'check_4', label: 'carrot', emoji: '🥕' },
+        { id: 'check_5', label: 'bird', emoji: '🐦' },
+        { id: 'check_6', label: 'cherry', emoji: '🍒' },
+        { id: 'check_7', label: 'dog', emoji: '🐶' },
+        { id: 'check_8', label: 'fish', emoji: '🐟' },
+        { id: 'check_9', label: 'grape', emoji: '🍇' },
+        { id: 'check_10', label: 'rabbit', emoji: '🐰' },
+        { id: 'check_11', label: 'orange', emoji: '🍊' },
+        { id: 'check_12', label: 'potato', emoji: '🥔' }
     ];
     
     // ========================================
@@ -381,6 +381,7 @@
         learningTrialLogs: [],
         learningWordEvents: [],
         practiceTrials: [],
+        practiceLearningTrials: [],
         practiceData: [],
         afcData: [],
         afcTrials: [],
@@ -388,6 +389,7 @@
         currentTrialIndex: 0,
         currentTestIndex: 0,
         currentPracticeIndex: 0,
+        currentPracticeLearningIndex: 0,
         currentLearningTrialLog: null,
         currentPracticeTrial: null,
         practiceAwaitingResponse: false,
@@ -443,26 +445,47 @@
     }
 
     function ensurePracticeScreens() {
-        if (document.getElementById('practice-instructions-screen')) return;
         const host = document.querySelector('.screen')?.parentElement || document.body;
-        const screen = document.createElement('div');
-        screen.id = 'practice-instructions-screen';
-        screen.className = 'screen';
-        screen.innerHTML = `
-            <div class="screen-content">
-                <h2>練習セッション</h2>
-                <p>本番の学習に入る前に、キーボード操作の練習を行います。</p>
-                <div class="instruction-card">
-                    <h3>操作方法</h3>
-                    <p>左手は <strong>D・F</strong>、右手は <strong>J・K</strong> に置いてください。</p>
-                    <p>画面の各選択肢には <strong>D / F / J / K</strong> のラベルが表示されます。</p>
-                    <p>音声が終わったら、聞こえた英単語に対応するラベルのキーを押してください。</p>
-                    <p>マウスは使わず、指はキーから離さないでください。</p>
+
+        if (!document.getElementById('practice-instructions-screen')) {
+            const screen = document.createElement('div');
+            screen.id = 'practice-instructions-screen';
+            screen.className = 'screen';
+            screen.innerHTML = `
+                <div class="screen-content">
+                    <h2>練習セッション</h2>
+                    <p>練習でも「学習 → テスト」の順で進めます。絵文字を使って対応を練習します。</p>
+                    <div class="instruction-card">
+                        <h3>学習</h3>
+                        <p>4つの絵文字を見ながら4つの単語を聞きます。音声に集中してください。</p>
+                        <h3>テスト</h3>
+                        <p>単語が1つ流れます。対応する絵文字を D / F / J / K で選びます。</p>
+                        <p>左手は D/F、右手は J/K に置き、指はキーから離さないでください。</p>
+                        <p>マウスは使わず、キーボードのみで回答します。</p>
+                    </div>
+                    <p class="screen-note">スペースキーで練習を開始します。</p>
                 </div>
-                <button class="btn" onclick="startPractice()">練習を開始</button>
-            </div>
-        `;
-        host.appendChild(screen);
+            `;
+            host.appendChild(screen);
+        }
+
+        if (!document.getElementById('practice-test-instructions-screen')) {
+            const testScreen = document.createElement('div');
+            testScreen.id = 'practice-test-instructions-screen';
+            testScreen.className = 'screen';
+            testScreen.innerHTML = `
+                <div class="screen-content">
+                    <h2>練習テスト</h2>
+                    <p>音声が終わってから、対応する絵文字を D / F / J / K で選んでください。</p>
+                    <div class="instruction-card">
+                        <p>左手は D/F、右手は J/K に置き、指はキーから離さないでください。</p>
+                        <p>マウスは使わず、キーボードのみで回答します。</p>
+                    </div>
+                    <p class="screen-note">スペースキーで練習テストを開始します。</p>
+                </div>
+            `;
+            host.appendChild(testScreen);
+        }
     }
 
     function ensureInstructionHints() {
@@ -657,9 +680,12 @@
     }
 
     function setStartButtonEnabled(enabled) {
-        const button = document.getElementById('start-experiment');
-        if (button) {
-            button.disabled = !enabled;
+        const hint = document.getElementById('start-hint');
+        if (hint) {
+            hint.textContent = enabled
+                ? '準備完了。スペースキーで開始します。'
+                : '音声を確認中です。準備完了後、スペースキーで開始します。';
+            hint.style.color = enabled ? 'var(--accent-success)' : 'var(--text-muted)';
         }
     }
 
@@ -1025,8 +1051,27 @@
     }
 
     // ========================================
-    // Practice Phase (Keyboard Familiarization)
+    // Practice Phase (Learning -> Test)
     // ========================================
+
+    function generatePracticeLearningTrials() {
+        const trials = [];
+        const items = shuffleArray(PRACTICE_ITEMS);
+        const perTrial = CONFIG.objectsPerTrial;
+
+        for (let i = 0; i < items.length; i += perTrial) {
+            const chunk = items.slice(i, i + perTrial);
+            if (chunk.length < perTrial) break;
+            const wordOrder = shuffleArray(chunk);
+            trials.push({
+                trial: trials.length + 1,
+                items: chunk,
+                wordOrder
+            });
+        }
+
+        return trials;
+    }
 
     function generatePracticeTrials() {
         const trials = [];
@@ -1051,10 +1096,88 @@
     }
 
     function startPractice() {
-        STATE.phase = 'practice';
+        STATE.phase = 'practice-learning';
+        STATE.currentPracticeLearningIndex = 0;
+        STATE.practiceLearningTrials = generatePracticeLearningTrials();
+        STATE.practiceAwaitingResponse = false;
+
+        const hint = document.getElementById('learning-hint');
+        if (hint) {
+            hint.textContent = '練習: 絵文字を見ながら音声を聞いてください';
+        }
+        const learningStatus = document.querySelector('#learning-audio-status span');
+        if (learningStatus) {
+            learningStatus.textContent = '音声に集中し、絵文字を見比べてください';
+        }
+
+        showCountdown(() => {
+            showScreen('learning-screen');
+            runPracticeLearningTrial();
+        });
+    }
+
+    function runPracticeLearningTrial() {
+        if (STATE.currentPracticeLearningIndex >= STATE.practiceLearningTrials.length) {
+            endPracticeLearning();
+            return;
+        }
+
+        const trial = STATE.practiceLearningTrials[STATE.currentPracticeLearningIndex];
+        const total = STATE.practiceLearningTrials.length;
+
+        document.getElementById('learning-progress').style.width =
+            `${(STATE.currentPracticeLearningIndex / total) * 100}%`;
+        document.getElementById('learning-counter').textContent =
+            `練習 学習 ${STATE.currentPracticeLearningIndex + 1} / ${total}`;
+
+        const objectsContainer = document.getElementById('learning-objects');
+        objectsContainer.innerHTML = trial.items.map((item, i) => `
+            <div class="object-wrapper">
+                <span class="object-number">${i + 1}</span>
+                <div class="practice-emoji" aria-label="${item.label}">${item.emoji}</div>
+            </div>
+        `).join('');
+
+        playPracticeWordsSequentially(trial.wordOrder, 0, () => {
+            const elapsedApprox = trial.wordOrder.length * CONFIG.wordInterval;
+            const remaining = Math.max(500, CONFIG.trialDuration - elapsedApprox);
+
+            setTimeout(() => {
+                STATE.currentPracticeLearningIndex++;
+                objectsContainer.innerHTML = '<div class="fixation">+</div>';
+
+                setTimeout(() => {
+                    runPracticeLearningTrial();
+                }, CONFIG.iti);
+            }, remaining);
+        });
+    }
+
+    function playPracticeWordsSequentially(items, index, callback) {
+        if (index >= items.length) {
+            callback();
+            return;
+        }
+
+        const item = items[index];
+        playPracticeAudio(item.id, () => {
+            setTimeout(() => {
+                playPracticeWordsSequentially(items, index + 1, callback);
+            }, CONFIG.wordInterval);
+        });
+    }
+
+    function endPracticeLearning() {
+        STATE.phase = 'practice-test-instructions';
+        showScreen('practice-test-instructions-screen');
+    }
+
+    function startPracticeTest() {
+        STATE.phase = 'practice-test';
         STATE.currentPracticeIndex = 0;
         STATE.practiceData = [];
         STATE.practiceTrials = generatePracticeTrials();
+        STATE.practiceAwaitingResponse = false;
 
         showCountdown(() => {
             showScreen('afc-screen');
@@ -1071,18 +1194,16 @@
         const currentTrial = STATE.practiceTrials[STATE.currentPracticeIndex];
         const total = STATE.practiceTrials.length;
 
-        // Update progress
         document.getElementById('afc-progress').style.width =
             `${(STATE.currentPracticeIndex / total) * 100}%`;
         document.getElementById('afc-counter').textContent =
-            `練習 ${STATE.currentPracticeIndex + 1} / ${total}`;
+            `練習 テスト ${STATE.currentPracticeIndex + 1} / ${total}`;
 
-        // Display options as text labels
         const container = document.getElementById('afc-objects');
         container.innerHTML = currentTrial.options.map((item, i) => `
             <div class="object-wrapper" data-practice-id="${item.id}" data-position="${i + 1}">
                 <span class="object-number">${AFC_KEY_LABELS[i] || ''}</span>
-                <div class="practice-label">${item.label}</div>
+                <div class="practice-emoji" aria-label="${item.label}">${item.emoji}</div>
             </div>
         `).join('');
 
@@ -1153,6 +1274,15 @@
         STATE.learningTrialLogs = [];
         STATE.learningWordEvents = [];
         STATE.currentLearningTrialLog = null;
+
+        const hint = document.getElementById('learning-hint');
+        if (hint) {
+            hint.textContent = '音声に集中して対応を見つける';
+        }
+        const learningStatus = document.querySelector('#learning-audio-status span');
+        if (learningStatus) {
+            learningStatus.textContent = '音声に集中し、4つの物体を見比べてください';
+        }
         
         showCountdown(() => {
             showScreen('learning-screen');
@@ -2204,15 +2334,17 @@ ${STATE.afcTrials.map(trial => {
             const activeId = document.querySelector('.screen.active')?.id;
             if (activeId === 'welcome-screen') {
                 e.preventDefault();
-                const startButton = document.getElementById('start-experiment');
-                if (startButton && !startButton.disabled) {
-                    startExperiment();
-                }
+                startExperiment();
                 return;
             }
             if (activeId === 'practice-instructions-screen') {
                 e.preventDefault();
                 startPractice();
+                return;
+            }
+            if (activeId === 'practice-test-instructions-screen') {
+                e.preventDefault();
+                startPracticeTest();
                 return;
             }
             if (activeId === 'instructions-screen') {
@@ -2237,7 +2369,7 @@ ${STATE.afcTrials.map(trial => {
                 }
             }
         }
-        if (STATE.phase === 'practice' && STATE.practiceAwaitingResponse) {
+        if (STATE.phase === 'practice-test' && STATE.practiceAwaitingResponse) {
             const keyNum = getAFCPositionForKey(e.key);
             if (keyNum) {
                 const wrapper = document.querySelector(`.object-wrapper[data-position="${keyNum}"]`);
