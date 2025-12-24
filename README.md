@@ -33,8 +33,18 @@ with a 4AFC recognition test.
    - 4 objects shown per trial.
    - 4 words played per trial (order shuffled).
    - Mappings are learned across trials (single trials are ambiguous).
+   - Trials are generated without duplicate pairs within a trial.
+   - No word-object pair is repeated in consecutive trials.
 2. Test phase:
-   - 4AFC test, 2 blocks (18 words x 2 = 36 trials).
+    - 4AFC test, 2 blocks (18 words x 2 = 36 trials).
+    - Respond with D/F/J/K keys shown on the objects (keyboard responses only for RT).
+
+## Participant Instructions (Test)
+
+- Place your left hand on D/F and right hand on J/K.
+- Each object is labeled D/F/J/K; press the matching key.
+- Keep your fingers on the keys and respond as quickly and accurately as possible.
+- Do not use the mouse; responses are collected by keyboard only.
    - Options are precomputed per block:
      - Target position is balanced across the 4 slots.
      - Distractors are balanced within a block.
@@ -48,8 +58,13 @@ Auto-download at the end:
 
 - Excel (`.xlsx`) only, with multiple sheets:
   - `Data`: test trial data.
-  - `LearningTrials`: learning-phase trials (for co-occurrence analysis).
+  - `LearningTrials`: learning-phase trials (co-occurrence sets + timing/position metadata).
+  - `LearningEvents`: per-word presentation events with audio timing.
+  - `PairMap`: pairId -> word -> objectIndex lookup.
   - `FoilProbability`: word–object co-occurrence counts/probabilities per test option.
+  - `Config`: run configuration, timing, audio preload status, environment.
+  - `Aptitude`: CSSL aptitude-style summary metrics (overall + block-level).
+  - `AptitudeNotes`: definitions for Aptitude metrics and units.
   - `Summary`: overall accuracy, chance-corrected accuracy, mean RT, pair-wise results, and test order.
 
 Manual download buttons (if shown) export the same Excel workbook. Some browsers
@@ -61,8 +76,29 @@ Key Data-sheet columns:
 - `block`, `blockTrial`, `trial`: test indexing.
 - `targetWord`, `targetObjectIndex`, `targetPosition`.
 - `option1PairId..option4PairId`: option order shown.
-- `selectedPairId`, `selectedPosition`, `correct`, `rt`.
+- `selectedPairId`, `selectedPosition`, `correct`, `rt`, `rtRaw`.
+- `trialStartTimestamp`, `trialStartPerfMs`.
+- `audioStartTimestamp`, `audioStartPerfMs`, `audioEndTimestamp`, `audioEndPerfMs`, `audioDurationMs`, `audioPlayOk`.
+- `responsePerfMs`, `responseSource`.
 - `timestamp`, `timestampISO`, `elapsedMs`.
+
+Key LearningTrials columns:
+
+- `pairIds`, `objectIndices`, `objectPositions`, `wordsInTrial`, `wordOrder`, `wordOrderPairIds`, `repList`.
+- `trialStartTimestamp`, `trialEndTimestamp`, `trialDurationMs`, `trialStartElapsedMs`, `trialEndElapsedMs`.
+
+Key LearningEvents columns:
+
+- `trialNum`, `wordIndex`, `word`, `pairId`, `objectIndex`.
+- `audioStartTimestamp`, `audioEndTimestamp`, `audioDurationMs`, `onsetFromTrialStartMs`, `playbackOk`.
+
+Key Aptitude columns:
+
+- `scope` (overall or block), `block`, `blockIndex`.
+- `n_total`, `n_scored`, `n_correct`, `pc`, `pc_chance_corrected`, `mean_rt`.
+- `n_missed`, `missed_rate`, `dpc`, `chance_level`, `rt_unit`.
+
+The `AptitudeNotes` sheet defines what each Aptitude metric means.
 
 The summary sheet includes overall accuracy, chance-corrected accuracy, mean RT,
 pair-wise results, and the full test order.
@@ -79,6 +115,12 @@ Defaults are defined in `CSSL_Task.js`:
 
 If you change the word list or the number of pairs, regenerate audio and ensure
 `audio/` contains all required files.
+
+Learning trial generation enforces:
+- no duplicate pairs within a trial
+- no repeated pairs in consecutive trials
+This requires `numPairs >= objectsPerTrial * 2` and
+`numPairs * repetitions` divisible by `objectsPerTrial`.
 
 ## Hosting Notes
 

@@ -14,6 +14,17 @@
         audioBasePath: 'audio',
         audioExtension: 'mp3'
     };
+
+    const TASK_VERSION = '1.3.0';
+
+    const AFC_KEYS = ['d', 'f', 'j', 'k'];
+    const AFC_KEY_LABELS = ['D', 'F', 'J', 'K'];
+
+    function getAFCPositionForKey(key) {
+        const lower = String(key || '').toLowerCase();
+        const index = AFC_KEYS.indexOf(lower);
+        return index >= 0 ? index + 1 : null;
+    }
     
     // ========================================
     // Pseudoword List (Research-validated)
@@ -344,16 +355,21 @@
         pairs: [],  // [{word, objectIndex}]
         pairMap: new Map(),
         learningTrials: [],
+        learningTrialLogs: [],
+        learningWordEvents: [],
         afcData: [],
         afcTrials: [],
-        
+
         currentTrialIndex: 0,
         currentTestIndex: 0,
-        
+        currentLearningTrialLog: null,
+
         experimentStartTime: null,
+        experimentStartPerf: null,
         autoDownloaded: false,
         randomSeed: null,
         random: null,
+        wordMap: new Map(),
         audioPreloadComplete: false,
         audioPreloadOk: false,
         audioMissing: []
@@ -429,7 +445,7 @@
         return AUDIO_CACHE.get(key);
     }
     
-    function playAudio(word, callback) {
+    function playAudio(word, callback, onStart) {
         const audio = getAudioForWord(word);
         if (activeAudio && activeAudio !== audio) {
             activeAudio.pause();
@@ -439,16 +455,35 @@
         audio.currentTime = 0;
         
         let finished = false;
+        let started = false;
+        const markStarted = () => {
+            if (started) return;
+            started = true;
+            if (onStart) onStart();
+        };
+        const cleanup = () => {
+            audio.removeEventListener('ended', handleEnded);
+            audio.removeEventListener('error', handleError);
+            audio.removeEventListener('play', markStarted);
+            audio.removeEventListener('playing', markStarted);
+        };
         const finish = (ok) => {
             if (finished) return;
             finished = true;
+            cleanup();
             if (callback) callback(ok);
         };
-        
-        audio.addEventListener('ended', () => finish(true), { once: true });
-        audio.addEventListener('error', () => finish(false), { once: true });
-        
-        audio.play().catch(() => finish(false));
+        const handleEnded = () => finish(true);
+        const handleError = () => finish(false);
+
+        audio.addEventListener('ended', handleEnded, { once: true });
+        audio.addEventListener('error', handleError, { once: true });
+        audio.addEventListener('play', markStarted, { once: true });
+        audio.addEventListener('playing', markStarted, { once: true });
+
+        audio.play().then(() => {
+            markStarted();
+        }).catch(() => finish(false));
     }
     
     function preloadAudio(words) {
@@ -575,7 +610,9 @@
         generatePairs();
         
         // Generate learning trials
-        generateLearningTrials();
+        if (!generateLearningTrials()) {
+            return;
+        }
         
         showScreen('instructions-screen');
     }
@@ -592,50 +629,95 @@
         }));
 
         STATE.pairMap = new Map(STATE.pairs.map(pair => [pair.pairId, pair]));
+        STATE.wordMap = new Map(STATE.pairs.map(pair => [pair.word, pair]));
     }
     
     function generateLearningTrials() {
         STATE.learningTrials = [];
-        
-        // Create balanced co-occurrence matrix
-        // Each pair appears CONFIG.repetitions times
-        // Within each trial, 4 objects + 4 words (4x4)
-        
-        const allPairings = [];
-        for (let rep = 0; rep < CONFIG.repetitions; rep++) {
-            for (const pair of STATE.pairs) {
-                allPairings.push({ ...pair, rep });
+
+        const objectsPerTrial = CONFIG.objectsPerTrial;
+        const repetitions = CONFIG.repetitions;
+        const totalOccurrences = STATE.pairs.length * repetitions;
+
+        if (totalOccurrences % objectsPerTrial !== 0) {
+            reportLearningTrialGenerationError(
+                `学習試行の生成に失敗しました（${totalOccurrences}が${objectsPerTrial}で割り切れません）。`
+            );
+            return false;
+        }
+
+        if (STATE.pairs.length < objectsPerTrial * 2) {
+            reportLearningTrialGenerationError(
+                `連続提示の禁止には少なくとも${objectsPerTrial * 2}ペアが必要です。`
+            );
+            return false;
+        }
+
+        const maxAttempts = 500;
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            const trials = buildLearningTrialsWithConstraints(STATE.pairs, objectsPerTrial, repetitions);
+            if (trials) {
+                STATE.learningTrials = trials;
+                return true;
             }
         }
-        
-        // Shuffle
-        const shuffled = shuffleArray(allPairings);
-        
-        // Group into trials of 4
-        const objectsPerTrial = CONFIG.objectsPerTrial;
-        const numTrials = Math.ceil(shuffled.length / objectsPerTrial);
-        
-        for (let t = 0; t < numTrials; t++) {
-            const trialPairs = shuffled.slice(t * objectsPerTrial, (t + 1) * objectsPerTrial);
-            
-            if (trialPairs.length < objectsPerTrial) {
-                // Pad with random pairs if needed
-                while (trialPairs.length < objectsPerTrial) {
-                    const randomPair = STATE.pairs[randomInt(STATE.pairs.length)];
-                    trialPairs.push({ ...randomPair, rep: -1 });
-                }
+
+        reportLearningTrialGenerationError(
+            '学習試行の生成に失敗しました。設定値を見直してください。'
+        );
+        return false;
+    }
+
+    function reportLearningTrialGenerationError(message) {
+        console.error(message);
+        alert(message);
+    }
+
+    function buildLearningTrialsWithConstraints(pairs, objectsPerTrial, repetitions) {
+        const totalTrials = (pairs.length * repetitions) / objectsPerTrial;
+        const counts = new Map(pairs.map(pair => [pair.pairId, repetitions]));
+        const trials = [];
+        let prevIds = new Set();
+
+        for (let t = 0; t < totalTrials; t++) {
+            const candidates = pairs.filter(pair => {
+                const remaining = counts.get(pair.pairId) || 0;
+                return remaining > 0 && !prevIds.has(pair.pairId);
+            });
+
+            if (candidates.length < objectsPerTrial) {
+                return null;
             }
-            
-            // Shuffle order within trial
+
+            const ranked = shuffleArray(candidates).sort((a, b) => {
+                return (counts.get(b.pairId) || 0) - (counts.get(a.pairId) || 0);
+            });
+            const poolSize = Math.min(ranked.length, Math.max(objectsPerTrial * 2, objectsPerTrial));
+            const pool = ranked.slice(0, poolSize);
+            const selected = shuffleArray(pool).slice(0, objectsPerTrial);
+
+            const trialPairs = selected.map(pair => {
+                const remaining = (counts.get(pair.pairId) || 0) - 1;
+                counts.set(pair.pairId, remaining);
+                const rep = repetitions - remaining;
+                return { ...pair, rep };
+            });
+
             const shuffledPairs = shuffleArray(trialPairs);
-            
-            STATE.learningTrials.push({
+            trials.push({
                 trialNum: t + 1,
                 pairs: shuffledPairs,
                 objects: shuffledPairs.map(p => p.objectIndex),
-                words: shuffleArray(shuffledPairs.map(p => p.word))  // Shuffle word order
+                words: shuffleArray(shuffledPairs.map(p => p.word))
             });
+            prevIds = new Set(trialPairs.map(pair => pair.pairId));
         }
+
+        if ([...counts.values()].some(remaining => remaining !== 0)) {
+            return null;
+        }
+
+        return trials;
     }
 
     function generateAFCTestTrials() {
@@ -808,6 +890,10 @@
         STATE.phase = 'learning';
         STATE.currentTrialIndex = 0;
         STATE.experimentStartTime = Date.now();
+        STATE.experimentStartPerf = performance.now();
+        STATE.learningTrialLogs = [];
+        STATE.learningWordEvents = [];
+        STATE.currentLearningTrialLog = null;
         
         showCountdown(() => {
             showScreen('learning-screen');
@@ -831,6 +917,36 @@
             }
         }, 1000);
     }
+
+    function createLearningTrialLog(trial, trialIndex, totalTrials, startTimestamp, startPerfMs) {
+        const pairIds = (trial.pairs || []).map(p => p.pairId);
+        const objectIndices = (trial.objects || []);
+        const wordsInTrial = (trial.pairs || []).map(p => p.word);
+        const wordOrder = (trial.words || []);
+        const wordOrderPairIds = wordOrder.map(word => {
+            const pair = STATE.wordMap.get(word);
+            return pair ? pair.pairId : '';
+        });
+
+        return {
+            trialNum: trial.trialNum ?? '',
+            trialIndex,
+            totalTrials,
+            objectsPerTrial: objectIndices.length,
+            pairIds,
+            objectIndices,
+            objectPositions: objectIndices.map((_, idx) => idx + 1),
+            wordsInTrial,
+            wordOrder,
+            wordOrderPairIds,
+            repList: (trial.pairs || []).map(p => p.rep),
+            trialStartTimestamp: startTimestamp,
+            trialStartPerfMs: startPerfMs,
+            trialEndTimestamp: '',
+            trialEndPerfMs: '',
+            trialDurationMs: ''
+        };
+    }
     
     function runLearningTrial() {
         if (STATE.currentTrialIndex >= STATE.learningTrials.length) {
@@ -840,6 +956,12 @@
         
         const trial = STATE.learningTrials[STATE.currentTrialIndex];
         const total = STATE.learningTrials.length;
+        const trialIndex = STATE.currentTrialIndex + 1;
+        const trialStartTimestamp = Date.now();
+        const trialStartPerfMs = performance.now();
+        const trialLog = createLearningTrialLog(trial, trialIndex, total, trialStartTimestamp, trialStartPerfMs);
+        STATE.learningTrialLogs.push(trialLog);
+        STATE.currentLearningTrialLog = trialLog;
         
         // Update progress
         document.getElementById('learning-progress').style.width = 
@@ -863,6 +985,13 @@
             const remaining = Math.max(500, CONFIG.trialDuration - elapsedApprox);
             
             setTimeout(() => {
+                if (trialLog) {
+                    const trialEndPerfMs = performance.now();
+                    const trialEndTimestamp = Date.now();
+                    trialLog.trialEndTimestamp = trialEndTimestamp;
+                    trialLog.trialEndPerfMs = trialEndPerfMs;
+                    trialLog.trialDurationMs = Math.round(trialEndPerfMs - trialLog.trialStartPerfMs);
+                }
                 STATE.currentTrialIndex++;
                 
                 // Brief ISI with fixation
@@ -872,21 +1001,54 @@
                     runLearningTrial();
                 }, CONFIG.iti);
             }, remaining);
-        });
+        }, trialLog);
     }
     
-    function playWordsSequentially(words, index, callback) {
+    function playWordsSequentially(words, index, callback, trialLog) {
         if (index >= words.length) {
             callback();
             return;
         }
         
         const word = words[index];
-        
-        playAudio(word, () => {
+        const queuedStartPerfMs = performance.now();
+        const queuedStartTimestamp = Date.now();
+        let audioStartPerfMs = null;
+        let audioStartTimestamp = null;
+
+        playAudio(word, (ok) => {
+            const audioEndPerfMs = performance.now();
+            const audioEndTimestamp = Date.now();
+            const startPerfMs = audioStartPerfMs ?? queuedStartPerfMs;
+            const startTimestamp = audioStartTimestamp ?? queuedStartTimestamp;
+            const pair = STATE.wordMap.get(word);
+            const pairId = pair ? pair.pairId : '';
+            const objectIndex = pair ? pair.objectIndex : '';
+            const onsetFromTrialStartMs = trialLog && typeof trialLog.trialStartPerfMs === 'number' ?
+                Math.round(startPerfMs - trialLog.trialStartPerfMs) : '';
+
+            STATE.learningWordEvents.push({
+                trialNum: trialLog ? trialLog.trialNum : '',
+                trialIndex: trialLog ? trialLog.trialIndex : '',
+                wordIndex: index + 1,
+                word,
+                pairId,
+                objectIndex,
+                audioStartTimestamp: startTimestamp,
+                audioEndTimestamp: audioEndTimestamp,
+                audioStartPerfMs: Math.round(startPerfMs),
+                audioEndPerfMs: Math.round(audioEndPerfMs),
+                audioDurationMs: Math.round(audioEndPerfMs - startPerfMs),
+                onsetFromTrialStartMs,
+                playbackOk: ok ? 1 : 0
+            });
+
             setTimeout(() => {
-                playWordsSequentially(words, index + 1, callback);
+                playWordsSequentially(words, index + 1, callback, trialLog);
             }, CONFIG.wordInterval);
+        }, () => {
+            audioStartPerfMs = performance.now();
+            audioStartTimestamp = Date.now();
         });
     }
     
@@ -933,8 +1095,8 @@
         // Display objects
         const container = document.getElementById('afc-objects');
         container.innerHTML = options.map((pair, i) => `
-            <div class="object-wrapper" data-pair-id="${pair.pairId}" data-position="${i + 1}" onclick="selectAFCObject(${pair.pairId})">
-                <span class="object-number">${i + 1}</span>
+            <div class="object-wrapper" data-pair-id="${pair.pairId}" data-position="${i + 1}">
+                <span class="object-number">${AFC_KEY_LABELS[i] || ''}</span>
                 ${NOVEL_OBJECTS[pair.objectIndex]}
             </div>
         `).join('');
@@ -946,6 +1108,9 @@
         }
 
         // Store trial info
+        const trialStartTimestamp = Date.now();
+        const trialStartPerfMs = performance.now();
+
         STATE.currentAFCTrial = {
             block: currentTrial.block,
             blockTrial: currentTrial.blockTrial,
@@ -955,31 +1120,50 @@
             targetObjectIndex: targetPair.objectIndex,
             options: currentTrial.options,
             onsetTime: null,
-            audioStartTime: null,
-            audioEndTime: null
+            trialStartTimestamp,
+            trialStartPerfMs,
+            audioStartTimestamp: null,
+            audioStartPerfMs: null,
+            audioEndTimestamp: null,
+            audioEndPerfMs: null,
+            audioPlayOk: null
         };
 
         STATE.awaitingAFCResponse = false;
-        STATE.currentAFCTrial.audioStartTime = performance.now();
 
-        playAudio(targetPair.word, () => {
+        playAudio(targetPair.word, (ok) => {
             if (audioStatus) {
                 audioStatus.style.display = 'none';
             }
-            STATE.currentAFCTrial.audioEndTime = performance.now();
-            STATE.currentAFCTrial.onsetTime = STATE.currentAFCTrial.audioEndTime;
+            const audioEndPerfMs = performance.now();
+            const audioEndTimestamp = Date.now();
+            if (STATE.currentAFCTrial.audioStartPerfMs === null) {
+                STATE.currentAFCTrial.audioStartPerfMs = STATE.currentAFCTrial.trialStartPerfMs;
+                STATE.currentAFCTrial.audioStartTimestamp = STATE.currentAFCTrial.trialStartTimestamp;
+            }
+            STATE.currentAFCTrial.audioEndPerfMs = audioEndPerfMs;
+            STATE.currentAFCTrial.audioEndTimestamp = audioEndTimestamp;
+            STATE.currentAFCTrial.audioPlayOk = ok ? 1 : 0;
+            STATE.currentAFCTrial.onsetTime = audioEndPerfMs;
             STATE.awaitingAFCResponse = true;
+        }, () => {
+            STATE.currentAFCTrial.audioStartPerfMs = performance.now();
+            STATE.currentAFCTrial.audioStartTimestamp = Date.now();
         });
     }
     
-    function selectAFCObject(pairId) {
+    function selectAFCObject(pairId, responseSource = '') {
         if (!STATE.awaitingAFCResponse) return;
         STATE.awaitingAFCResponse = false;
         
         const trial = STATE.currentAFCTrial;
-        const rt = trial.onsetTime ? (performance.now() - trial.onsetTime) : 0;
+        const responsePerfMs = performance.now();
+        const responseTimestamp = Date.now();
+        const rtRaw = trial.onsetTime ? (responsePerfMs - trial.onsetTime) : 0;
         const correct = pairId === trial.targetPairId;
         const position = trial.options.indexOf(pairId) + 1;
+        const audioDurationMs = trial.audioStartPerfMs !== null && trial.audioEndPerfMs !== null ?
+            Math.round(trial.audioEndPerfMs - trial.audioStartPerfMs) : '';
         
         // Record data
         STATE.afcData.push({
@@ -993,8 +1177,19 @@
             selectedPairId: pairId,
             selectedPosition: position,
             correct: correct ? 1 : 0,
-            rt: Math.round(rt),
-            timestamp: Date.now(),
+            rt: Math.round(rtRaw),
+            rtRaw: Math.round(rtRaw * 1000) / 1000,
+            trialStartTimestamp: trial.trialStartTimestamp,
+            trialStartPerfMs: trial.trialStartPerfMs,
+            audioStartTimestamp: trial.audioStartTimestamp,
+            audioStartPerfMs: trial.audioStartPerfMs,
+            audioEndTimestamp: trial.audioEndTimestamp,
+            audioEndPerfMs: trial.audioEndPerfMs,
+            audioDurationMs,
+            audioPlayOk: trial.audioPlayOk,
+            responsePerfMs,
+            responseSource,
+            timestamp: responseTimestamp,
             targetPosition: trial.targetPosition,
             option1PairId: trial.options[0],
             option2PairId: trial.options[1],
@@ -1229,25 +1424,263 @@
 
     function buildLearningTrialsTable() {
         const headers = [
-            'trialNum', 'pairIds', 'objectIndices', 'wordsInTrial', 'wordOrder', 'repList'
+            'trialNum', 'trialIndex', 'totalTrials', 'objectsPerTrial',
+            'pairIds', 'objectIndices', 'objectPositions',
+            'wordsInTrial', 'wordOrder', 'wordOrderPairIds', 'repList',
+            'trialStartTimestamp', 'trialStartTimestampISO', 'trialStartPerfMs',
+            'trialEndTimestamp', 'trialEndTimestampISO', 'trialEndPerfMs',
+            'trialDurationMs', 'trialStartElapsedMs', 'trialEndElapsedMs'
         ];
 
-        const rows = STATE.learningTrials.map(trial => {
-            const pairIds = (trial.pairs || []).map(p => p.pairId).join('|');
-            const objectIndices = (trial.objects || []).join('|');
-            const wordsInTrial = (trial.pairs || []).map(p => p.word).join('|');
-            const wordOrder = (trial.words || []).join('|');
-            const repList = (trial.pairs || []).map(p => p.rep).join('|');
+        const logs = STATE.learningTrialLogs && STATE.learningTrialLogs.length > 0 ?
+            STATE.learningTrialLogs :
+            STATE.learningTrials.map((trial, idx) =>
+                createLearningTrialLog(trial, idx + 1, STATE.learningTrials.length, '', '')
+            );
+        const experimentStart = typeof STATE.experimentStartTime === 'number' ? STATE.experimentStartTime : null;
+
+        const rows = logs.map(trial => {
+            const pairIds = (trial.pairIds || []).join('|');
+            const objectIndices = (trial.objectIndices || []).join('|');
+            const objectPositions = (trial.objectPositions || []).join('|');
+            const wordsInTrial = (trial.wordsInTrial || []).join('|');
+            const wordOrder = (trial.wordOrder || []).join('|');
+            const wordOrderPairIds = (trial.wordOrderPairIds || []).join('|');
+            const repList = (trial.repList || []).join('|');
+            const trialStartTimestampISO = trial.trialStartTimestamp ?
+                new Date(trial.trialStartTimestamp).toISOString() : '';
+            const trialEndTimestampISO = trial.trialEndTimestamp ?
+                new Date(trial.trialEndTimestamp).toISOString() : '';
+            const trialStartElapsedMs = experimentStart && trial.trialStartTimestamp ?
+                trial.trialStartTimestamp - experimentStart : '';
+            const trialEndElapsedMs = experimentStart && trial.trialEndTimestamp ?
+                trial.trialEndTimestamp - experimentStart : '';
             return [
                 trial.trialNum ?? '',
+                trial.trialIndex ?? '',
+                trial.totalTrials ?? '',
+                trial.objectsPerTrial ?? '',
                 pairIds,
                 objectIndices,
+                objectPositions,
                 wordsInTrial,
                 wordOrder,
-                repList
+                wordOrderPairIds,
+                repList,
+                trial.trialStartTimestamp ?? '',
+                trialStartTimestampISO,
+                trial.trialStartPerfMs ?? '',
+                trial.trialEndTimestamp ?? '',
+                trialEndTimestampISO,
+                trial.trialEndPerfMs ?? '',
+                trial.trialDurationMs ?? '',
+                trialStartElapsedMs,
+                trialEndElapsedMs
             ];
         });
 
+        return { headers, rows };
+    }
+
+    function buildLearningEventsTable() {
+        const headers = [
+            'trialNum', 'trialIndex', 'wordIndex',
+            'word', 'pairId', 'objectIndex',
+            'audioStartTimestamp', 'audioStartTimestampISO', 'audioStartPerfMs',
+            'audioEndTimestamp', 'audioEndTimestampISO', 'audioEndPerfMs',
+            'audioDurationMs', 'onsetFromTrialStartMs', 'playbackOk'
+        ];
+
+        const rows = STATE.learningWordEvents.map(event => {
+            const audioStartTimestampISO = event.audioStartTimestamp ?
+                new Date(event.audioStartTimestamp).toISOString() : '';
+            const audioEndTimestampISO = event.audioEndTimestamp ?
+                new Date(event.audioEndTimestamp).toISOString() : '';
+            return [
+                event.trialNum ?? '',
+                event.trialIndex ?? '',
+                event.wordIndex ?? '',
+                event.word ?? '',
+                event.pairId ?? '',
+                event.objectIndex ?? '',
+                event.audioStartTimestamp ?? '',
+                audioStartTimestampISO,
+                event.audioStartPerfMs ?? '',
+                event.audioEndTimestamp ?? '',
+                audioEndTimestampISO,
+                event.audioEndPerfMs ?? '',
+                event.audioDurationMs ?? '',
+                event.onsetFromTrialStartMs ?? '',
+                event.playbackOk ?? ''
+            ];
+        });
+
+        return { headers, rows };
+    }
+
+    function buildPairMapTable() {
+        const headers = ['pairId', 'word', 'objectIndex'];
+        const rows = STATE.pairs.map(pair => [
+            pair.pairId ?? '',
+            pair.word ?? '',
+            pair.objectIndex ?? ''
+        ]);
+        return { headers, rows };
+    }
+
+    function buildConfigTable() {
+        const experimentStartISO = STATE.experimentStartTime ?
+            new Date(STATE.experimentStartTime).toISOString() : '';
+        const rows = [
+            ['taskVersion', TASK_VERSION],
+            ['participantId', CONFIG.participantId],
+            ['randomSeed', STATE.randomSeed ?? ''],
+            ['experimentStart', STATE.experimentStartTime ?? ''],
+            ['experimentStartISO', experimentStartISO],
+            ['experimentStartPerfMs', STATE.experimentStartPerf ?? ''],
+            ['numPairs', CONFIG.numPairs],
+            ['repetitions', CONFIG.repetitions],
+            ['objectsPerTrial', CONFIG.objectsPerTrial],
+            ['testBlocks', CONFIG.testBlocks],
+            ['trialDurationMs', CONFIG.trialDuration],
+            ['wordIntervalMs', CONFIG.wordInterval],
+            ['itiMs', CONFIG.iti],
+            ['audioBasePath', CONFIG.audioBasePath],
+            ['audioExtension', CONFIG.audioExtension],
+            ['audioPreloadOk', STATE.audioPreloadOk ? 1 : 0],
+            ['audioMissingCount', STATE.audioMissing.length],
+            ['audioMissingList', STATE.audioMissing.join('|')],
+            ['userAgent', navigator.userAgent || '']
+        ];
+        return { headers: ['key', 'value'], rows };
+    }
+
+    function buildAptitudeTable() {
+        const headers = [
+            'participantId', 'seed', 'scope', 'block', 'blockIndex',
+            'n_total', 'n_scored', 'n_correct',
+            'pc', 'pc_chance_corrected', 'mean_rt',
+            'n_missed', 'missed_rate', 'dpc',
+            'chance_level', 'rt_unit'
+        ];
+
+        const chanceLevel = 1 / Math.max(1, CONFIG.objectsPerTrial);
+        const rtUnit = 'ms';
+        const toNumber = (value, digits) => {
+            if (value === null || value === undefined || Number.isNaN(value)) return '';
+            return Number(value.toFixed(digits));
+        };
+
+        const computeStats = (trials) => {
+            const nTotal = trials.length;
+            const scored = trials.filter(d => d && (d.correct === 0 || d.correct === 1));
+            const nScored = scored.length;
+            const nCorrect = scored.reduce((sum, d) => sum + d.correct, 0);
+            const pc = nScored > 0 ? (nCorrect / nScored) : null;
+            const denom = 1 - chanceLevel;
+            const pcChanceCorrected = (pc !== null && denom > 0) ? ((pc - chanceLevel) / denom) : null;
+            const rtValues = scored
+                .map(d => d.rt)
+                .filter(rt => typeof rt === 'number' && Number.isFinite(rt));
+            const meanRt = rtValues.length > 0
+                ? (rtValues.reduce((sum, rt) => sum + rt, 0) / rtValues.length)
+                : null;
+            const nMissed = nTotal - nScored;
+            const missedRate = nTotal > 0 ? (nMissed / nTotal) : null;
+            return {
+                nTotal,
+                nScored,
+                nCorrect,
+                pc,
+                pcChanceCorrected,
+                meanRt,
+                nMissed,
+                missedRate
+            };
+        };
+
+        const rows = [];
+        const seed = STATE.randomSeed ?? '';
+        const participantId = CONFIG.participantId;
+
+        const overallStats = computeStats(STATE.afcData);
+        rows.push([
+            participantId,
+            seed,
+            'overall',
+            '',
+            '',
+            overallStats.nTotal,
+            overallStats.nScored,
+            overallStats.nCorrect,
+            toNumber(overallStats.pc, 6),
+            toNumber(overallStats.pcChanceCorrected, 6),
+            toNumber(overallStats.meanRt, 3),
+            overallStats.nMissed,
+            toNumber(overallStats.missedRate, 6),
+            '',
+            toNumber(chanceLevel, 6),
+            rtUnit
+        ]);
+
+        const blockNumbers = Array.from(new Set(STATE.afcData.map(d => d.block)))
+            .filter(block => block !== undefined && block !== null)
+            .sort((a, b) => a - b);
+        let prevPc = null;
+
+        blockNumbers.forEach((block, index) => {
+            const blockTrials = STATE.afcData.filter(d => d.block === block);
+            const stats = computeStats(blockTrials);
+            const dpc = (prevPc !== null && stats.pc !== null) ? (stats.pc - prevPc) : null;
+
+            rows.push([
+                participantId,
+                seed,
+                'block',
+                block,
+                index + 1,
+                stats.nTotal,
+                stats.nScored,
+                stats.nCorrect,
+                toNumber(stats.pc, 6),
+                toNumber(stats.pcChanceCorrected, 6),
+                toNumber(stats.meanRt, 3),
+                stats.nMissed,
+                toNumber(stats.missedRate, 6),
+                toNumber(dpc, 6),
+                toNumber(chanceLevel, 6),
+                rtUnit
+            ]);
+
+            if (stats.pc !== null) {
+                prevPc = stats.pc;
+            }
+        });
+
+        return { headers, rows };
+    }
+
+    function buildAptitudeNotesTable() {
+        const headers = ['field', 'meaning'];
+        const rows = [
+            ['data_scope', 'Computed from 4AFC test trials in the Data sheet only.'],
+            ['participantId', 'Participant ID entered at start.'],
+            ['seed', 'Random seed used for trial generation.'],
+            ['scope', 'overall = all test trials; block = block-level summary.'],
+            ['block', 'Test block number (blank for overall).'],
+            ['blockIndex', 'Order of blocks after sorting by block number.'],
+            ['n_total', 'Total trials in scope.'],
+            ['n_scored', 'Trials with valid accuracy (correct = 0 or 1).'],
+            ['n_correct', 'Number of correct trials.'],
+            ['pc', 'Proportion correct (n_correct / n_scored).'],
+            ['pc_chance_corrected', 'Chance-corrected pc = (pc - chance_level) / (1 - chance_level).'],
+            ['mean_rt', 'Mean RT (ms) across scored trials; RT is from audio end to response.'],
+            ['n_missed', 'Trials without valid accuracy (n_total - n_scored).'],
+            ['missed_rate', 'n_missed / n_total.'],
+            ['dpc', 'Change in pc relative to previous block; blank for first block.'],
+            ['chance_level', 'Chance performance = 1 / objectsPerTrial.'],
+            ['rt_unit', 'Unit for RT values (ms).']
+        ];
         return { headers, rows };
     }
 
@@ -1323,7 +1756,11 @@
             'block', 'blockTrial', 'trial', 'targetWord', 'targetObjectIndex', 'targetPosition',
             'option1PairId', 'option2PairId', 'option3PairId', 'option4PairId',
             'selectedPairId', 'selectedPosition', 'correct', 'rt',
-            'timestamp', 'timestampISO', 'elapsedMs'
+            'timestamp', 'timestampISO', 'elapsedMs',
+            'rtRaw', 'trialStartTimestamp', 'trialStartPerfMs',
+            'audioStartTimestamp', 'audioStartPerfMs',
+            'audioEndTimestamp', 'audioEndPerfMs', 'audioDurationMs',
+            'audioPlayOk', 'responsePerfMs', 'responseSource'
         ];
 
         const rows = allData.map(d => headers.map(h => d[h] !== undefined ? d[h] : ''));
@@ -1399,16 +1836,31 @@ ${STATE.afcTrials.map(trial => {
         const summaryText = buildSummaryText();
         const summaryLines = summaryText.split('\n').map(line => [line]);
         const learningTable = buildLearningTrialsTable();
+        const learningEventsTable = buildLearningEventsTable();
+        const pairMapTable = buildPairMapTable();
+        const configTable = buildConfigTable();
+        const aptitudeTable = buildAptitudeTable();
+        const aptitudeNotesTable = buildAptitudeNotesTable();
         const foilTable = buildFoilProbabilityTable();
 
         const workbook = XLSX.utils.book_new();
         const dataSheet = XLSX.utils.aoa_to_sheet([headers, ...rows]);
         const summarySheet = XLSX.utils.aoa_to_sheet(summaryLines);
         const learningSheet = XLSX.utils.aoa_to_sheet([learningTable.headers, ...learningTable.rows]);
+        const learningEventsSheet = XLSX.utils.aoa_to_sheet([learningEventsTable.headers, ...learningEventsTable.rows]);
+        const pairMapSheet = XLSX.utils.aoa_to_sheet([pairMapTable.headers, ...pairMapTable.rows]);
+        const configSheet = XLSX.utils.aoa_to_sheet([configTable.headers, ...configTable.rows]);
+        const aptitudeSheet = XLSX.utils.aoa_to_sheet([aptitudeTable.headers, ...aptitudeTable.rows]);
+        const aptitudeNotesSheet = XLSX.utils.aoa_to_sheet([aptitudeNotesTable.headers, ...aptitudeNotesTable.rows]);
         const foilSheet = XLSX.utils.aoa_to_sheet([foilTable.headers, ...foilTable.rows]);
 
         XLSX.utils.book_append_sheet(workbook, dataSheet, 'Data');
         XLSX.utils.book_append_sheet(workbook, learningSheet, 'LearningTrials');
+        XLSX.utils.book_append_sheet(workbook, learningEventsSheet, 'LearningEvents');
+        XLSX.utils.book_append_sheet(workbook, pairMapSheet, 'PairMap');
+        XLSX.utils.book_append_sheet(workbook, configSheet, 'Config');
+        XLSX.utils.book_append_sheet(workbook, aptitudeSheet, 'Aptitude');
+        XLSX.utils.book_append_sheet(workbook, aptitudeNotesSheet, 'AptitudeNotes');
         XLSX.utils.book_append_sheet(workbook, foilSheet, 'FoilProbability');
         XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
 
@@ -1476,14 +1928,14 @@ ${STATE.afcTrials.map(trial => {
     // ========================================
     
     document.addEventListener('keydown', (e) => {
-        // AFC test: 1-4 keys to select
+        // AFC test: D/F/J/K keys to select
         if (STATE.phase === 'afc' && STATE.awaitingAFCResponse) {
-            const keyNum = parseInt(e.key);
-            if (keyNum >= 1 && keyNum <= 4) {
+            const keyNum = getAFCPositionForKey(e.key);
+            if (keyNum) {
                 const wrapper = document.querySelector(`.object-wrapper[data-position="${keyNum}"]`);
                 if (wrapper) {
                     const pairId = parseInt(wrapper.dataset.pairId);
-                    selectAFCObject(pairId);
+                    selectAFCObject(pairId, 'key');
                 }
             }
         }
@@ -1501,5 +1953,5 @@ ${STATE.afcTrials.map(trial => {
     applyDefaultSettingsDisplay();
     startAudioPreload();
     console.log('CSSL Task initialized');
-    console.log('Version: 1.0.0');
+    console.log(`Version: ${TASK_VERSION}`);
     
