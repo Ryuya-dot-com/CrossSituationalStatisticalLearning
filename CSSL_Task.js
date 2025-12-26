@@ -1103,7 +1103,7 @@
 
         const hint = document.getElementById('learning-hint');
         if (hint) {
-            hint.textContent = '練習: 絵文字を見ながら音声を聞いてください';
+            hint.textContent = '練習: 音声に集中して対応を見つけてください';
         }
         const learningStatus = document.querySelector('#learning-audio-status span');
         if (learningStatus) {
@@ -1166,6 +1166,8 @@
             }, CONFIG.wordInterval);
         });
     }
+
+    
 
     function endPracticeLearning() {
         STATE.phase = 'practice-test-instructions';
@@ -1336,6 +1338,7 @@
             trialDurationMs: ''
         };
     }
+
     
     function runLearningTrial() {
         if (STATE.currentTrialIndex >= STATE.learningTrials.length) {

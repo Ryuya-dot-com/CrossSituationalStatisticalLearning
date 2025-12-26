@@ -126,6 +126,8 @@ Key LearningEvents columns:
 
 - `trialNum`, `wordIndex`, `word`, `pairId`, `objectIndex`.
 - `audioStartTimestamp`, `audioEndTimestamp`, `audioDurationMs`, `onsetFromTrialStartMs`, `playbackOk`.
+- `responsePosition`, `responseKey`, `responseObjectIndex`, `responsePairId`, `responseCorrect`.
+- `responseStartTimestamp`, `responseTimestamp`, `responseRtMs`, `responseSource`, `responseMissed`.
 
 Key Aptitude columns:
 
