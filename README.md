@@ -1,166 +1,48 @@
-# CSSL Task (Audio-Only)
+# CSSL Task (Audio-Only, v2.0.0)
 
-This folder contains an audio-only Cross-Situational Statistical Learning (CSSL) task.
-Participants learn word-object mappings across repeated ambiguous trials and are tested
-with a 4AFC recognition test.
+Audio-only Cross-Situational Statistical Learning (CSSL) task grounded in **Yu & Smith (2007, *Psychological Science*)** and **Yu & Smith (2011, *Developmental Science*)**. Participants learn 18 novel word–object mappings across 27 individually ambiguous 4×4 trials and are assessed with a 4AFC recognition test.
+
+## Methodological Refinements (v2.0.0)
+
+1. **Symmetric 2×2 Equidistant Visual Stage & True Central Fixation (`+`)**
+   - All 4 candidate objects are arranged in a fixed **2×2 grid** equidistant from the central fixation cross (`+`), eliminating eccentricity confounds between inner and outer positions and preventing mobile/tablet grid-wrapping mismatches.
+   - A centered `+` fixation cross precedes Trial 1 and appears during every inter-trial interval (ITI) in both learning and testing so gaze consistently starts at `(0, 0)` center (Yu & Smith, 2011).
+   - Peripheral pulsing animations, hover scaling, and slot numbers (`1..4`) during learning are removed to prevent exogenous gaze disruption and artificial serial-mapping strategies.
+
+2. **Exact SOA-Locked Within-Trial Timing (Yu & Smith, 2007; 2011)**
+   - Default learning trial duration is **12,000 ms** (`1,200 ms` initial visual preview silence + 4 words scheduled at `2,700 ms` onset-to-onset intervals: `1.2s, 3.9s, 6.6s, 9.3s`, ending at `12.0s`), giving every spoken word—from Word 1 to Word 4—an identical multimodal attentional registration window ($\eta_{ij}(t)$ in Yu & Smith, 2011).
+
+3. **Intuitive 2×2 Response Operation (Mouse Center-Click Default + 2×2 Keyboard Option)**
+   - **Mouse Mode (Default)**: Each 4AFC trial starts when the participant clicks the central `+` button, anchoring both eye gaze and cursor equidistant to all four quadrants before the target word plays. Participants then click the matching object directly.
+   - **Keyboard Mode (Selectable in Experimenter Settings)**: Uses spatially congruent 2×2 physical key codes (`KeyR` = Top-Left, `KeyU` = Top-Right, `KeyF` = Bottom-Left, `KeyJ` = Bottom-Right), making input immune to Japanese IME (`全角/かな`) state.
+   - **Response Window**: By default (`onset300`), responses are accepted starting `300 ms` after word onset (reflecting ~100 ms initial word recognition + ~200 ms motor planning; Yu & Smith, 2011), avoiding dropped responses when participants recognize a word before audio offset. Both `rtFromOnsetMs` and `rtFromOffsetMs` are logged.
+
+4. **Low-Nameability Novel Shapes & Curated Pseudowords**
+   - `NOVEL_OBJECTS` uses 24 asymmetric, low-nameability sculptural silhouettes modeled after Yu & Smith (2011, Fig. 5) rather than recognizable everyday icons, preventing verbal-labeling strategies.
+   - When `numPairs <= 18`, `CURATED_PSEUDOWORDS_18` selects 18 disyllabic pseudowords (including Yu & Smith's core items `bosa`, `manu`, `colat`, `regli`, `gazzer`) while excluding items homophonous with Japanese words (`kita`, `toma`, `noba`).
+
+5. **Controlled Co-occurrence Matrix & Reproducible Lists**
+   - Learning trial generation enforces: (a) no duplicate pairs within a trial, (b) no repeated pairs across consecutive trials, (c) capped off-diagonal spurious co-occurrences (`<= 2` out of 6) to maximize contextual diversity, and (d) balanced spatial quadrant placement decoupled from temporal word order.
+   - Fixed seeds (`fixed_a`, `fixed_b`) are provided by default for individual-differences / aptitude reliability, alongside an optional `random` seed mode.
 
 ## Files
 
-- `index.html`: Main experiment UI (GitHub Pages entrypoint).
-- `CSSL_Task.js`: Task logic, randomization, data export.
-- `CSSL_Task.html`: Legacy entrypoint (redirects to `index.html`).
-- `audio/`: Pre-generated word audio files (`.mp3`).
-- `generate_cssl_audio.py`: Script to generate audio files with gTTS.
-
-## Quick Start
-
-1. Generate audio files (requires internet and gTTS):
-   - `pip install gTTS`
-   - `python3 generate_cssl_audio.py`
-2. Open `index.html` in a browser (or host on GitHub Pages).
-3. Enter a participant ID and start the task.
-
-## Audio
-
-- Audio files are required in `audio/` and must be named using lowercase words
-  from `PSEUDOWORDS` in `CSSL_Task.js` (for example, `bosa.mp3`).
-- On load, the task preloads all expected audio files. If files are missing, the
-  Start button stays disabled and a warning is shown.
-- The "Audio Test" button plays a sample word.
-
-## Task Flow
-
-0. Practice phase (before learning):
-   - Practice follows the same order as the main task: learning → test.
-   - Learning uses emojis as objects while 4 words are played.
-   - Test plays one word and participants choose the matching emoji (D/F/J/K).
-   - Audio files are loaded from `audio_check` (check_1..check_12, 12 trials).
-1. Learning phase:
-   - 4 objects shown per trial.
-   - 4 words played per trial (order shuffled).
-   - Mappings are learned across trials (single trials are ambiguous).
-   - Trials are generated without duplicate pairs within a trial.
-   - No word-object pair is repeated in consecutive trials.
-2. Test phase:
-    - 4AFC test, 2 blocks (18 words x 2 = 36 trials).
-    - Respond with D/F/J/K keys shown on the objects (keyboard responses only for RT).
-
-## Participant Instructions (Test)
-
-- Place your left hand on D/F and right hand on J/K.
-- Each object is labeled D/F/J/K; press the matching key.
-- Keep your fingers on the keys and respond as quickly and accurately as possible.
-- Do not use the mouse; responses are collected by keyboard only.
-- Screens advance with the space key (no clickable start buttons).
-
-## Participant Instructions (Practice)
-
-- Practice has a short learning phase followed by a test phase.
-- In learning, four emojis appear while four words play.
-- In test, choose the matching emoji using D/F/J/K keys only.
-- This phase is for keyboard familiarization and flow understanding.
-- Screens advance with the space key (no clickable start buttons).
-
-Practice audio mapping:
-- check_1: apple
-- check_2: banana
-- check_3: cat
-- check_4: carrot
-- check_5: bird
-- check_6: cherry
-- check_7: dog
-- check_8: fish
-- check_9: grape
-- check_10: rabbit
-- check_11: orange
-- check_12: potato
-
-Practice displays the corresponding emojis for these words.
-
-Hosting note: practice audio is loaded from `audio_check` by default and
-falls back to `../audio_check` if needed. Ensure one of these paths exists
-relative to `index.html` so `check_*.mp3` is reachable.
-   - Options are precomputed per block:
-     - Target position is balanced across the 4 slots.
-     - Distractors are balanced within a block.
-     - The same distractor set for a target is avoided across blocks.
-   - Responses are accepted only after the audio finishes.
-   - RT is measured from audio end to response.
+- `index.html`: Main experiment UI and collapsible experimenter settings panel.
+- `CSSL_Task.js`: Stimulus definitions, constrained schedule generator, timing engine, and data export.
+- `CSSL_Task.html`: Legacy redirect entrypoint to `index.html`.
+- `audio/`: Pre-generated pseudoword `.mp3` files (24 files).
+- `audio_check/`: Pre-generated familiarization practice `.mp3` files.
 
 ## Data Output
 
-Auto-download at the end:
+At task completion, results auto-download as an Excel workbook (`.xlsx`) with a working UTF-8 BOM `.csv` fallback button (`downloadData()`):
 
-- Excel (`.xlsx`) only, with multiple sheets:
-  - `Data`: test trial data.
-  - `LearningTrials`: learning-phase trials (co-occurrence sets + timing/position metadata).
-  - `LearningEvents`: per-word presentation events with audio timing.
-  - `PairMap`: pairId -> word -> objectIndex lookup.
-  - `FoilProbability`: word–object co-occurrence counts/probabilities per test option.
-  - `Config`: run configuration, timing, audio preload status, environment.
-  - `Aptitude`: CSSL aptitude-style summary metrics (overall + block-level).
-  - `AptitudeNotes`: definitions for Aptitude metrics and units.
-  - `Summary`: overall accuracy, chance-corrected accuracy, mean RT, pair-wise results, and test order.
-
-Manual download buttons (if shown) export the same Excel workbook. Some browsers
-may block automatic downloads; allow them or use the manual button.
-
-Key Data-sheet columns:
-
-- `seed`: random seed used for reproducibility.
-- `block`, `blockTrial`, `trial`: test indexing.
-- `targetWord`, `targetObjectIndex`, `targetPosition`.
-- `option1PairId..option4PairId`: option order shown.
-- `selectedPairId`, `selectedPosition`, `correct`, `rt`, `rtRaw`.
-- `trialStartTimestamp`, `trialStartPerfMs`.
-- `audioStartTimestamp`, `audioStartPerfMs`, `audioEndTimestamp`, `audioEndPerfMs`, `audioDurationMs`, `audioPlayOk`.
-- `responsePerfMs`, `responseSource`.
-- `timestamp`, `timestampISO`, `elapsedMs`.
-
-Key LearningTrials columns:
-
-- `pairIds`, `objectIndices`, `objectPositions`, `wordsInTrial`, `wordOrder`, `wordOrderPairIds`, `repList`.
-- `trialStartTimestamp`, `trialEndTimestamp`, `trialDurationMs`, `trialStartElapsedMs`, `trialEndElapsedMs`.
-
-Key LearningEvents columns:
-
-- `trialNum`, `wordIndex`, `word`, `pairId`, `objectIndex`.
-- `audioStartTimestamp`, `audioEndTimestamp`, `audioDurationMs`, `onsetFromTrialStartMs`, `playbackOk`.
-- `responsePosition`, `responseKey`, `responseObjectIndex`, `responsePairId`, `responseCorrect`.
-- `responseStartTimestamp`, `responseTimestamp`, `responseRtMs`, `responseSource`, `responseMissed`.
-
-Key Aptitude columns:
-
-- `scope` (overall or block), `block`, `blockIndex`.
-- `n_total`, `n_scored`, `n_correct`, `pc`, `pc_chance_corrected`, `mean_rt`.
-- `n_missed`, `missed_rate`, `dpc`, `chance_level`, `rt_unit`.
-
-The `AptitudeNotes` sheet defines what each Aptitude metric means.
-
-The summary sheet includes overall accuracy, chance-corrected accuracy, mean RT,
-pair-wise results, and the full test order.
-
-## Configuration
-
-Defaults are defined in `CSSL_Task.js`:
-
-- `numPairs`: 18
-- `repetitions`: 6
-- `objectsPerTrial`: 4 (4x4)
-- `testBlocks`: 2
-- `trialDuration`, `wordInterval`, `iti`: timing parameters
-
-If you change the word list or the number of pairs, regenerate audio and ensure
-`audio/` contains all required files.
-
-Learning trial generation enforces:
-- no duplicate pairs within a trial
-- no repeated pairs in consecutive trials
-This requires `numPairs >= objectsPerTrial * 2` and
-`numPairs * repetitions` divisible by `objectsPerTrial`.
-
-## Hosting Notes
-
-For GitHub Pages, ensure `audio/` is included in the published build. If you need
-offline Excel export, replace the CDN `xlsx` script in `index.html` with a
-local copy of the library.
+- `Data`: Trial-by-trial 4AFC test data (`rt`, `rtRaw`, `rtFromOnsetMs`, `rtFromOffsetMs`, options, accuracy, audio timestamps).
+- `LearningTrials`: Trial-level co-occurrence sets, quadrant assignments, word orders, exact durations, and passive pointer quadrant dwell (`quadrantHoverMs`).
+- `LearningEvents`: Word-by-word onset/offset timestamps during learning.
+- `PairMap`: `pairId` -> `word` -> `objectIndex` mapping.
+- `FoilProbability`: Training co-occurrence counts and conditional probabilities for each 4AFC option.
+- `PracticeData`: Familiarization practice test trial responses.
+- `Config`: Full run configuration, timing parameters, seed mode, and environment metadata.
+- `Aptitude` & `AptitudeNotes`: Overall and block-level accuracy, chance-corrected accuracy, `dpc`, and mean RT.
+- `Summary`: Human-readable experiment summary and item-level accuracy.

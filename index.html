@@ -5,105 +5,102 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Cross-Situational Statistical Learning Task</title>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500&family=Outfit:wght@400;500;600;700&display=swap');
-        
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=IBM+Plex+Mono:wght@400;500;600&family=Outfit:wght@500;600;700&display=swap');
+
         :root {
-            --bg-primary: #0a0e14;
-            --bg-secondary: #151b26;
-            --bg-card: #1e2738;
-            --bg-elevated: #2a3548;
+            --bg-primary: #0f141d;
+            --bg-secondary: #171f2e;
+            --bg-card: #1e293b;
+            --bg-stage: #151d2b;
+            --bg-elevated: #293548;
             --accent-primary: #6366f1;
-            --accent-secondary: #a855f7;
-            --accent-tertiary: #ec4899;
+            --accent-secondary: #818cf8;
             --accent-success: #10b981;
             --accent-warning: #f59e0b;
             --accent-error: #ef4444;
             --text-primary: #f1f5f9;
-            --text-secondary: #94a3b8;
+            --text-secondary: #cbd5e1;
             --text-muted: #64748b;
             --border-color: #334155;
-            --gradient-primary: linear-gradient(135deg, var(--accent-primary), var(--accent-secondary));
-            --gradient-warm: linear-gradient(135deg, var(--accent-secondary), var(--accent-tertiary));
+            --gradient-primary: linear-gradient(135deg, #4f46e5, #7c3aed);
         }
-        
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
-            font-family: 'Noto Sans JP', 'Outfit', sans-serif;
+            font-family: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
             background: var(--bg-primary);
             color: var(--text-primary);
             min-height: 100vh;
-            line-height: 1.6;
+            line-height: 1.65;
             overflow-x: hidden;
+            user-select: none;
+            -webkit-user-select: none;
         }
-        
+
         .container {
-            max-width: 1100px;
+            max-width: 960px;
             margin: 0 auto;
-            padding: 2rem;
+            padding: 2rem 1.5rem;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
         }
-        
+
         /* Screens */
         .screen {
             display: none;
-            animation: fadeIn 0.5s ease;
         }
-        
+
         .screen.active {
             display: block;
+            animation: screenFade 0.22s ease-out;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+
+        @keyframes screenFade {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
-        
+
         /* Typography */
         h1 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2.75rem;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            font-size: 2.35rem;
             font-weight: 700;
-            margin-bottom: 0.5rem;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            margin-bottom: 0.4rem;
+            color: var(--text-primary);
+            letter-spacing: -0.01em;
         }
-        
+
         h2 {
-            font-family: 'Outfit', sans-serif;
-            font-size: 2rem;
+            font-family: 'Outfit', 'Noto Sans JP', sans-serif;
+            font-size: 1.75rem;
             font-weight: 600;
             margin-bottom: 1rem;
+            color: var(--text-primary);
         }
-        
+
         h3 {
-            font-size: 1.25rem;
-            font-weight: 500;
-            color: var(--accent-primary);
-            margin-bottom: 0.75rem;
-        }
-        
-        .subtitle {
             font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            margin-bottom: 0.65rem;
+        }
+
+        .subtitle {
+            font-size: 1.05rem;
             color: var(--text-secondary);
-            margin-bottom: 2.5rem;
+            margin-bottom: 1.75rem;
         }
 
         .screen-note {
-            font-size: 0.95rem;
+            font-size: 0.92rem;
             color: var(--text-muted);
-            margin-top: 1rem;
-            text-align: center;
-        }
-
-        .afc-key-hint {
-            font-size: 0.95rem;
-            color: var(--text-secondary);
             margin-top: 1rem;
             text-align: center;
         }
@@ -111,502 +108,493 @@
         /* Cards */
         .card {
             background: var(--bg-card);
-            border-radius: 20px;
-            padding: 1.75rem;
-            margin-bottom: 1.5rem;
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-bottom: 1.25rem;
             border: 1px solid var(--border-color);
-            transition: all 0.3s ease;
         }
-        
-        .card:hover {
-            border-color: var(--accent-primary);
-            box-shadow: 0 0 30px rgba(99, 102, 241, 0.1);
-        }
-        
+
         .card-header {
             display: flex;
             align-items: center;
-            gap: 0.75rem;
-            margin-bottom: 1.25rem;
+            gap: 0.65rem;
+            margin-bottom: 1rem;
         }
-        
+
+        .card-header h3 {
+            margin-bottom: 0;
+        }
+
         .card-icon {
-            width: 42px;
-            height: 42px;
-            background: var(--gradient-primary);
-            border-radius: 12px;
+            width: 36px;
+            height: 36px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.3rem;
+            font-size: 1.1rem;
         }
-        
+
         /* Forms */
         .form-group {
-            margin-bottom: 1.25rem;
+            margin-bottom: 0.75rem;
         }
-        
+
+        .form-group:last-child {
+            margin-bottom: 0;
+        }
+
         label {
             display: block;
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             font-weight: 500;
             color: var(--text-secondary);
-            margin-bottom: 0.5rem;
+            margin-bottom: 0.4rem;
         }
-        
+
         input[type="text"],
         input[type="number"],
         select {
             width: 100%;
-            padding: 0.85rem 1.1rem;
+            padding: 0.75rem 1rem;
             font-size: 1rem;
             font-family: inherit;
             background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
+            border: 1.5px solid var(--border-color);
+            border-radius: 10px;
             color: var(--text-primary);
-            transition: all 0.2s ease;
+            user-select: text;
+            -webkit-user-select: text;
         }
-        
+
         input:focus,
         select:focus {
             outline: none;
             border-color: var(--accent-primary);
-            box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.15);
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
         }
-        
+
+        /* Experimenter collapsible settings */
+        details.experimenter-panel {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 0.85rem 1.15rem;
+            margin-bottom: 1.25rem;
+        }
+
+        details.experimenter-panel summary {
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-muted);
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        details.experimenter-panel summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.experimenter-panel[open] summary {
+            color: var(--text-secondary);
+            margin-bottom: 1rem;
+            padding-bottom: 0.65rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 0.9rem;
+        }
+
         /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
             justify-content: center;
             gap: 0.5rem;
-            padding: 1rem 2rem;
+            padding: 0.85rem 1.75rem;
             font-size: 1rem;
             font-weight: 600;
             font-family: inherit;
             border: none;
-            border-radius: 14px;
+            border-radius: 12px;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
         }
 
         .btn:disabled {
-            opacity: 0.6;
+            opacity: 0.45;
             cursor: not-allowed;
-            transform: none;
-            box-shadow: none;
         }
-        
+
         .btn-primary {
             background: var(--gradient-primary);
-            color: white;
-            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.35);
+            color: #ffffff;
         }
-        
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 30px rgba(99, 102, 241, 0.45);
+
+        .btn-primary:hover:not(:disabled) {
+            filter: brightness(1.08);
         }
-        
+
         .btn-secondary {
             background: var(--bg-elevated);
             color: var(--text-primary);
-            border: 2px solid var(--border-color);
-        }
-        
-        .btn-secondary:hover {
-            border-color: var(--accent-primary);
-            background: var(--bg-card);
-        }
-        
-        .btn-large {
-            padding: 1.25rem 3.5rem;
-            font-size: 1.15rem;
-        }
-        
-        .btn-group {
-            display: flex;
-            gap: 1rem;
-            flex-wrap: wrap;
-        }
-        
-        /* Settings Grid */
-        .settings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-            gap: 1rem;
+            border: 1.5px solid var(--border-color);
         }
 
-        .setting-value {
-            width: 100%;
-            padding: 0.85rem 1.1rem;
-            font-size: 1rem;
-            font-weight: 600;
-            font-family: inherit;
-            background: var(--bg-secondary);
-            border: 2px solid var(--border-color);
-            border-radius: 12px;
-            color: var(--text-primary);
+        .btn-secondary:hover:not(:disabled) {
+            border-color: var(--accent-secondary);
         }
-        
+
+        .btn-large {
+            padding: 1rem 2.75rem;
+            font-size: 1.08rem;
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 0.9rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .action-footer {
+            margin-top: 1.75rem;
+            text-align: center;
+        }
+
         /* Instructions */
         .instructions {
             background: var(--bg-card);
-            border-radius: 20px;
-            padding: 2rem;
-            margin: 2rem 0;
-            border-left: 5px solid var(--accent-primary);
+            border-radius: 16px;
+            padding: 1.5rem 1.75rem;
+            margin: 1.15rem 0;
+            border-left: 4px solid var(--accent-primary);
         }
-        
+
         .instructions ul {
-            margin-left: 1.5rem;
-            margin-top: 1rem;
+            margin-left: 1.35rem;
+            margin-top: 0.5rem;
         }
-        
+
         .instructions li {
-            margin-bottom: 0.6rem;
+            margin-bottom: 0.5rem;
             color: var(--text-secondary);
         }
-        
-        /* Objects Display */
-        .objects-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1.5rem;
-            max-width: 700px;
-            margin: 2rem auto;
+
+        .key-diagram {
+            display: inline-grid;
+            grid-template-columns: repeat(2, 64px);
+            gap: 0.6rem 1.5rem;
+            margin: 0.75rem auto 0.25rem;
+            padding: 0.75rem 1.1rem;
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
         }
-        
-        .object-wrapper {
-            aspect-ratio: 1;
-            background: var(--bg-card);
-            border-radius: 20px;
+
+        .key-cap {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.95rem;
+            font-weight: 600;
+            padding: 0.4rem 0.5rem;
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            text-align: center;
+            color: var(--text-primary);
+        }
+
+        /* Minimalist Trial Header (No pulsing exogenous distractors; Yu & Smith 2011) */
+        .trial-topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 560px;
+            margin: 0 auto 1rem;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .progress-track {
+            max-width: 560px;
+            height: 4px;
+            background: var(--bg-secondary);
+            border-radius: 2px;
+            margin: 0 auto 1.5rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: #475569;
+            width: 0%;
+            transition: width 0.25s ease;
+        }
+
+        /* Symmetric 2x2 Equidistant Visual Stage (Yu & Smith 2007; 2011) */
+        .visual-stage {
+            position: relative;
+            width: 100%;
+            max-width: 540px;
+            aspect-ratio: 1 / 1;
+            margin: 0 auto;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 3px solid var(--border-color);
-            transition: all 0.3s ease;
-            cursor: pointer;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .object-wrapper:hover {
-            border-color: var(--accent-primary);
-            transform: scale(1.03);
-        }
-        
-        .object-wrapper.selected {
-            border-color: var(--accent-success);
-            box-shadow: 0 0 25px rgba(16, 185, 129, 0.4);
-        }
-        
-        .object-wrapper.correct {
-            border-color: var(--accent-success);
-            background: rgba(16, 185, 129, 0.1);
-        }
-        
-        .object-wrapper.incorrect {
-            border-color: var(--accent-error);
-            background: rgba(239, 68, 68, 0.1);
-        }
-        
-        .object-wrapper svg {
-            width: 80%;
-            height: 80%;
         }
 
-        #afc-screen .object-wrapper {
+        .objects-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-rows: repeat(2, minmax(0, 1fr));
+            gap: 4.25rem;
+            padding: 0.5rem;
+        }
+
+        .object-wrapper {
+            background: var(--bg-stage);
+            border-radius: 18px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid var(--border-color);
+            position: relative;
+            overflow: hidden;
+            transition: border-color 0.12s ease, background-color 0.12s ease;
+        }
+
+        .object-wrapper.empty-slot {
+            background: transparent;
+            border-color: transparent;
+            pointer-events: none;
+        }
+
+        /* Learning screen: strictly non-interactive, no hover scale or pointer cursor */
+        #learning-screen .object-wrapper {
             cursor: default;
         }
 
-        #afc-screen .object-wrapper:hover {
-            border-color: var(--border-color);
-            transform: none;
+        /* AFC selectable states */
+        .afc-clickable .object-wrapper:not(.empty-slot) {
+            cursor: pointer;
         }
 
-        
-        .object-number {
+        .afc-clickable .object-wrapper:not(.empty-slot):hover {
+            border-color: #64748b;
+        }
+
+        .object-wrapper.selected {
+            border-color: var(--accent-secondary) !important;
+            background: rgba(99, 102, 241, 0.14);
+        }
+
+        .object-wrapper.correct {
+            border-color: var(--accent-success) !important;
+            background: rgba(16, 185, 129, 0.16);
+        }
+
+        .object-wrapper.incorrect {
+            border-color: var(--accent-error) !important;
+            background: rgba(239, 68, 68, 0.16);
+        }
+
+        .object-wrapper svg {
+            width: 74%;
+            height: 74%;
+            display: block;
+            pointer-events: none;
+        }
+
+        .object-key-badge {
             position: absolute;
             top: 8px;
             left: 8px;
-            width: 28px;
-            height: 28px;
-            background: var(--bg-elevated);
-            border-radius: 8px;
+            min-width: 26px;
+            height: 26px;
+            padding: 0 6px;
+            background: rgba(15, 20, 29, 0.78);
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 0.9rem;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.82rem;
             font-weight: 600;
-            color: var(--text-secondary);
-        }
-
-        .practice-label {
-            font-size: 1.6rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            text-align: center;
-            padding: 0 0.5rem;
+            color: var(--text-muted);
+            pointer-events: none;
         }
 
         .practice-emoji {
-            font-size: 2.6rem;
+            font-size: 3.4rem;
             line-height: 1;
+            pointer-events: none;
         }
-        
-        /* Word Display */
-        .word-display {
-            text-align: center;
-            margin: 2rem 0;
-        }
-        
-        .current-word {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 3.5rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            letter-spacing: 0.1em;
-            text-shadow: 0 0 40px rgba(99, 102, 241, 0.3);
-        }
-        
-        .word-label {
-            font-size: 1rem;
-            color: var(--text-muted);
-            margin-bottom: 0.5rem;
-        }
-        
-        /* Words Row (for learning phase) */
-        .words-row {
+
+        /* Central Fixation Cross & Center-Anchor Button */
+        .center-anchor {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 10;
             display: flex;
-            justify-content: center;
-            gap: 2rem;
-            flex-wrap: wrap;
-            margin: 1.5rem 0;
-        }
-        
-        .word-item {
-            font-family: 'IBM Plex Mono', monospace;
-            font-size: 1.5rem;
-            padding: 0.75rem 1.5rem;
-            background: var(--bg-elevated);
-            border-radius: 12px;
-            color: var(--text-primary);
-        }
-        
-        .word-item.playing {
-            background: var(--gradient-primary);
-            color: white;
-            animation: wordPulse 0.6s ease;
-        }
-        
-        @keyframes wordPulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
-        
-        /* Progress */
-        .progress-container {
-            margin-bottom: 2rem;
-        }
-        
-        .progress-bar {
-            width: 100%;
-            height: 8px;
-            background: var(--bg-elevated);
-            border-radius: 4px;
-            overflow: hidden;
-        }
-        
-        .progress-fill {
-            height: 100%;
-            background: var(--gradient-primary);
-            border-radius: 4px;
-            transition: width 0.4s ease;
-        }
-        
-        .progress-text {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 0.6rem;
-            font-size: 0.9rem;
-            color: var(--text-secondary);
-        }
-        
-        /* Phase Badge */
-        .phase-badge {
-            display: inline-flex;
+            flex-direction: column;
             align-items: center;
-            gap: 0.5rem;
-            padding: 0.6rem 1.2rem;
-            background: var(--bg-elevated);
-            border-radius: 25px;
-            font-size: 0.95rem;
-            margin-bottom: 1.5rem;
+            justify-content: center;
+            pointer-events: none;
         }
-        
-        .phase-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            background: var(--accent-success);
-            animation: pulseDot 2s infinite;
-        }
-        
-        @keyframes pulseDot {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.9); }
-        }
-        
-        /* Results */
-        .results-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 1rem;
-            margin: 2rem 0;
-        }
-        
-        .result-card {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 1.5rem;
-            text-align: center;
-            border: 1px solid var(--border-color);
-        }
-        
-        .result-value {
-            font-size: 2.25rem;
-            font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+
+        .fixation-cross {
+            width: 44px;
+            height: 44px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             font-family: 'IBM Plex Mono', monospace;
+            font-size: 2.4rem;
+            font-weight: 400;
+            line-height: 1;
+            color: #cbd5e1;
         }
-        
-        .result-label {
-            font-size: 0.85rem;
-            color: var(--text-secondary);
-            margin-top: 0.35rem;
+
+        .fixation-cross.subtle {
+            color: #475569;
+            font-size: 1.65rem;
+            opacity: 0.55;
         }
-        
-        /* Table */
-        .results-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 1.5rem 0;
+
+        .center-start-btn {
+            pointer-events: auto;
+            width: 64px;
+            height: 64px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-secondary);
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 2rem;
+            line-height: 1;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 0 6px rgba(99, 102, 241, 0.14);
+            transition: background 0.15s ease, transform 0.12s ease;
         }
-        
-        .results-table th,
-        .results-table td {
-            padding: 0.85rem 1rem;
-            text-align: left;
-            border-bottom: 1px solid var(--border-color);
-        }
-        
-        .results-table th {
+
+        .center-start-btn:hover {
             background: var(--bg-elevated);
-            color: var(--accent-primary);
-            font-weight: 500;
+            transform: scale(1.05);
         }
-        
-        .results-table tr:hover {
-            background: rgba(99, 102, 241, 0.05);
+
+        .center-caption {
+            margin-top: 0.5rem;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            white-space: nowrap;
         }
-        
+
+        .trial-status-bar {
+            min-height: 1.8rem;
+            margin-top: 1.1rem;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-muted);
+        }
+
         /* Countdown */
         .countdown {
             font-family: 'Outfit', sans-serif;
-            font-size: 8rem;
+            font-size: 6rem;
             font-weight: 700;
-            background: var(--gradient-primary);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-            text-align: center;
-            animation: countdownPulse 1s ease infinite;
-        }
-        
-        @keyframes countdownPulse {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(0.95); opacity: 0.85; }
-        }
-        
-        /* Fixation */
-        .fixation {
-            font-size: 5rem;
-            color: var(--text-muted);
+            color: var(--text-primary);
             text-align: center;
         }
-        
-        /* Learning Chart */
-        .chart-container {
-            background: var(--bg-card);
-            border-radius: 16px;
-            padding: 1.5rem;
+
+        /* Results */
+        .results-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
             margin: 1.5rem 0;
         }
-        
-        .chart-title {
-            font-size: 1rem;
-            color: var(--text-secondary);
-            margin-bottom: 1rem;
+
+        .result-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 1.25rem;
+            text-align: center;
+            border: 1px solid var(--border-color);
         }
-        
+
+        .result-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--accent-secondary);
+            font-family: 'IBM Plex Mono', monospace;
+        }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-top: 0.3rem;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 0.75rem;
+            font-size: 0.92rem;
+        }
+
+        .results-table th,
+        .results-table td {
+            padding: 0.65rem 0.85rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .results-table th {
+            background: var(--bg-elevated);
+            color: var(--accent-secondary);
+            font-weight: 600;
+        }
+
+        .chart-container {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 1.25rem;
+            margin-top: 0.75rem;
+        }
+
         .chart-svg {
             width: 100%;
             height: 200px;
         }
-        
-        /* Audio Status */
-        .audio-status {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            font-size: 0.9rem;
-            color: var(--text-muted);
-        }
-        
-        .audio-icon {
-            width: 20px;
-            height: 20px;
-            border-radius: 50%;
-            background: var(--accent-success);
-            animation: audioWave 1s ease infinite;
-        }
-        
-        @keyframes audioWave {
-            0%, 100% { transform: scale(1); opacity: 1; }
-            50% { transform: scale(1.2); opacity: 0.7; }
-        }
-        
-        /* Responsive */
-        @media (max-width: 768px) {
+
+        /* Keep 2x2 geometry intact even on smaller laptops/tablets */
+        @media (max-width: 640px) {
             .container {
-                padding: 1.25rem;
+                padding: 1rem;
             }
-            
-            h1 {
-                font-size: 2rem;
+            .visual-stage {
+                max-width: 360px;
             }
-            
             .objects-container {
-                grid-template-columns: repeat(2, 1fr);
-                gap: 1rem;
+                gap: 2.5rem;
             }
-            
-            .current-word {
+            .practice-emoji {
                 font-size: 2.5rem;
-            }
-            
-            .words-row {
-                gap: 1rem;
-            }
-            
-            .word-item {
-                font-size: 1.1rem;
-                padding: 0.5rem 1rem;
             }
         }
     </style>
@@ -615,229 +603,285 @@
     <div class="container">
         <!-- Welcome Screen -->
         <div id="welcome-screen" class="screen active">
-            <h1>Cross-Situational Learning</h1>
-            <p class="subtitle">音声だけを頼りに、単語と物体の対応を学習します</p>
-            <p class="screen-note">回答は D / F / J / K キーのみ。進行はスペースキーです。</p>
-            
+            <h1>Cross-Situational Word Learning</h1>
+            <p class="subtitle">複数の場面を手がかりに、新しい単語と図形の対応を学習する課題です</p>
+
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon">👤</div>
                     <h3>参加者情報</h3>
                 </div>
                 <div class="form-group">
-                    <label for="participant-id">参加者ID</label>
-                    <input type="text" id="participant-id" placeholder="例: P001">
+                    <label for="participant-id">参加者ID（半角英数字）</label>
+                    <input type="text" id="participant-id" lang="en" inputmode="latin" autocomplete="off" spellcheck="false" placeholder="例: P001">
                 </div>
             </div>
-            
+
             <div class="card">
                 <div class="card-header">
                     <div class="card-icon">🔊</div>
-                    <h3>音声</h3>
+                    <h3>音声チェック</h3>
                 </div>
-                <p style="color: var(--text-secondary); margin-bottom: 0.75rem;">
-                    静かな環境で、音声がはっきり聞こえる音量に調整してください（ヘッドホン推奨）。
+                <p style="color: var(--text-secondary); margin-bottom: 0.85rem; font-size: 0.95rem;">
+                    静かな環境でヘッドホンまたはイヤホンを装着し、音声が明瞭に聞き取れる音量に調整してください。
                 </p>
-                <div>
-                    <button class="btn btn-secondary" onclick="testAudio()">🔊 音声テスト</button>
-                    <span id="audio-test-status" style="margin-left: 1rem; color: var(--text-muted);"></span>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <button type="button" class="btn btn-secondary" onclick="testAudio()">🔊 音声テストを再生</button>
+                    <span id="audio-test-status" style="font-size: 0.92rem; color: var(--text-muted);"></span>
                 </div>
             </div>
-            
-            <div style="margin-top: 2.5rem; text-align: center;">
-                <p class="screen-note" id="start-hint">音声を確認中です。準備完了後、スペースキーで開始します。</p>
+
+            <details class="experimenter-panel" id="experimenter-panel">
+                <summary>
+                    <span>⚙️ 実験条件設定（実験者用）</span>
+                    <span id="config-summary-badge" style="font-family: 'IBM Plex Mono', monospace; font-size: 0.8rem;"></span>
+                </summary>
+                <div class="settings-grid">
+                    <div class="form-group">
+                        <label for="cfg-response-mode">テスト回答方式</label>
+                        <select id="cfg-response-mode">
+                            <option value="mouse" selected>マウス選択（中央「＋」クリック起点・推奨）</option>
+                            <option value="keyboard">キーボード選択（2×2配置対応: R / U / F / J）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-trial-duration">学習1試行の時間</label>
+                        <select id="cfg-trial-duration">
+                            <option value="12000" selected>12秒（Yu &amp; Smith, 2007 原典準拠）</option>
+                            <option value="9000">9秒（短縮版: 初期1秒＋2秒×4語）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-test-blocks">4AFCテスト試行数</label>
+                        <select id="cfg-test-blocks">
+                            <option value="1">1ブロック（18試行: Yu &amp; Smith 原典準拠）</option>
+                            <option value="2" selected>2ブロック（36試行: 個人差・信頼性重視）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-response-window">テスト回答の受付開始</label>
+                        <select id="cfg-response-window">
+                            <option value="onset300" selected>音声開始300ms後（早期認識の空振り防止）</option>
+                            <option value="offset">音声再生終了後のみ（従来仕様）</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-seed-mode">刺激系列シード（個人差統制）</label>
+                        <select id="cfg-seed-mode">
+                            <option value="fixed_a" selected>固定リスト A（個人差比較用・推奨）</option>
+                            <option value="fixed_b">固定リスト B（カウンターバランス用）</option>
+                            <option value="random">参加者ごとにランダム生成</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="cfg-practice">練習セッション</label>
+                        <select id="cfg-practice">
+                            <option value="1" selected>実施する（学習2試行＋フィードバック付テスト4試行）</option>
+                            <option value="0">スキップする</option>
+                        </select>
+                    </div>
+                </div>
+            </details>
+
+            <div class="action-footer">
+                <button type="button" id="start-btn" class="btn btn-primary btn-large" onclick="startExperiment()" disabled>
+                    実験を開始する
+                </button>
+                <p class="screen-note" id="start-hint">音声ファイルを確認中です...</p>
             </div>
         </div>
 
         <!-- Practice Instructions -->
         <div id="practice-instructions-screen" class="screen">
             <h2>練習セッション</h2>
+            <p class="subtitle">本番を始める前に、画面の見方と回答方法を確認します</p>
 
             <div class="instructions">
-                <h3>流れ</h3>
+                <h3>1. 学習パートの進み方</h3>
                 <ul>
-                    <li>「学習 → テスト」の順で進みます</li>
-                    <li>学習では、4つの単語を聞きます。音声に集中して対応を見つけてください。</li>
-                    <li>テストでは、1語ずつ聞き、対応する絵文字を選びます</li>
+                    <li>最初に画面中央に注視点「<strong>＋</strong>」が表示されますので、中央を見つめてください。</li>
+                    <li>続いて4つの絵が表示され、少ししてから4つの英単語が順番に聞こえます。</li>
+                    <li>単語が聞こえる順番と、絵の位置には関係がありません。</li>
                 </ul>
             </div>
 
             <div class="instructions">
-                <h3>操作</h3>
-                <ul>
-                    <li>回答は D / F / J / K のキーボード入力のみです</li>
-                    <li>左手は D/F、右手は J/K に置き、指はキーから離さないでください</li>
-                    <li>マウスは使わず、キーボードのみで回答します</li>
+                <h3>2. テストパートの進み方</h3>
+                <ul id="practice-response-instructions">
+                    <!-- Dynamically populated for mouse or keyboard mode -->
                 </ul>
+                <div id="practice-key-diagram-wrap" style="display: none; text-align: center;">
+                    <div class="key-diagram">
+                        <div class="key-cap">左上: R</div>
+                        <div class="key-cap">右上: U</div>
+                        <div class="key-cap">左下: F</div>
+                        <div class="key-cap">右下: J</div>
+                    </div>
+                </div>
             </div>
 
-            <p class="screen-note">スペースキーで練習を開始します。</p>
+            <div class="action-footer">
+                <button type="button" class="btn btn-primary btn-large" onclick="startPractice()">練習を開始する</button>
+                <p class="screen-note">ボタンをクリックするか、スペースキーを押して開始します。</p>
+            </div>
         </div>
 
         <!-- Practice Test Instructions -->
         <div id="practice-test-instructions-screen" class="screen">
-            <h2>練習テスト</h2>
+            <h2>練習テスト（全4問）</h2>
 
             <div class="instructions">
-                <h3>やること</h3>
-                <ul>
-                    <li>単語が1つ流れます</li>
-                    <li>音声が終わってから、対応する絵文字を選びます</li>
-                    <li>回答は D / F / J / K のキーボード入力のみです</li>
-                    <li>左手は D/F、右手は J/K に置き、指はキーから離さないでください</li>
+                <h3>回答手順</h3>
+                <ul id="practice-test-response-list">
+                    <!-- Dynamically populated -->
                 </ul>
             </div>
 
-            <p class="screen-note">スペースキーで練習テストを開始します。</p>
+            <div class="action-footer">
+                <button type="button" class="btn btn-primary btn-large" onclick="startPracticeTest()">練習テストを開始する</button>
+                <p class="screen-note">ボタンをクリックするか、スペースキーを押して開始します。</p>
+            </div>
         </div>
-        
-        <!-- Instructions Screen -->
+
+        <!-- Main Learning Instructions -->
         <div id="instructions-screen" class="screen">
-            <h2>進め方</h2>
-            
+            <h2>本番：学習パート</h2>
+
             <div class="instructions">
-                <h3>学習</h3>
+                <h3>課題の内容</h3>
                 <ul>
-                    <li>毎回、4つの物体を見ながら4つの単語を聞きます</li>
-                    <li>単語と物体の組み合わせは、繰り返しの中で見えてきます</li>
-                    <li>画面を見続け、音声に集中してください</li>
-                </ul>
-            </div>
-            
-            <div class="instructions">
-                <h3>テスト</h3>
-                <ul>
-                    <li>単語が1つ流れます</li>
-                    <li>音声が終わってから、最も合う物体を選びます</li>
-                    <li>回答は <strong>D / F / J / K</strong> のキーボード入力のみです</li>
-                    <li>左手は D/F、右手は J/K に置き、指をキーから離さないでください</li>
-                    <li>マウスは使わず、正確さを優先してください</li>
+                    <li>ここからは未知の言語の<strong>新しい単語（18語）</strong>と<strong>見たことのない図形（18種類）</strong>が登場します。</li>
+                    <li>毎回、4つの図形が表示され、4つの単語が順番に再生されます（全27試行・約5分半）。</li>
+                    <li>1回の試行だけではどの単語がどの図形かわかりませんが、複数の試行を通して登場する組み合わせから、正しい対応関係がわかるようになっています。</li>
+                    <li>試行と試行の間は、画面中央の「<strong>＋</strong>」を見つめてお待ちください。学習パートでは操作は不要です。</li>
                 </ul>
             </div>
 
-            <p class="screen-note">スペースキーで学習を開始します。</p>
+            <div class="action-footer">
+                <button type="button" class="btn btn-primary btn-large" onclick="startLearning()">本番の学習を開始する</button>
+                <p class="screen-note">ボタンをクリックするか、スペースキーを押して開始します。</p>
+            </div>
         </div>
-        
+
         <!-- Learning Phase -->
         <div id="learning-screen" class="screen">
-            <div class="phase-badge">
-                <span class="phase-dot"></span>
-                学習
+            <div class="trial-topbar">
+                <span id="learning-phase-label">学習パート</span>
+                <span id="learning-counter">1 / 27</span>
             </div>
-            
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="learning-progress"></div>
-                </div>
-                <div class="progress-text">
-                    <span id="learning-counter">試行 1 / 27</span>
-                    <span id="learning-hint">音声に集中して対応を見つける</span>
-                </div>
-            </div>
-            
-            <div class="objects-container" id="learning-objects">
-                <!-- Objects will be inserted here -->
-            </div>
-            
-            <div class="audio-status" id="learning-audio-status" style="justify-content: center; margin-top: 1.5rem;">
-                <div class="audio-icon"></div>
-                <span>音声に集中し、4つの物体を見比べてください</span>
-            </div>
-        </div>
-        
-        <!-- 4AFC Instructions -->
-        <div id="afc-instructions-screen" class="screen">
-            <h2>テスト</h2>
-            
-            <div class="instructions">
-                <h3>やること</h3>
-                <ul>
-                    <li>単語が1つ流れます</li>
-                    <li>音声が終わってから、D / F / J / K で回答します</li>
-                    <li>左手は D/F、右手は J/K に置き、指はキーから離さないでください</li>
-                    <li>マウスは使わず、正確さを優先してください</li>
-                </ul>
+            <div class="progress-track">
+                <div class="progress-fill" id="learning-progress"></div>
             </div>
 
-            <p class="afc-key-hint">回答は D / F / J / K のキーボード入力のみです。</p>
-            <p class="screen-note">スペースキーでテストを開始します。</p>
+            <div class="visual-stage">
+                <div class="objects-container" id="learning-objects">
+                    <!-- 2x2 quadrants -->
+                </div>
+                <div class="center-anchor" id="learning-center-anchor">
+                    <div class="fixation-cross" id="learning-fixation">+</div>
+                </div>
+            </div>
+
+            <div class="trial-status-bar" id="learning-status-text"></div>
         </div>
-        
+
+        <!-- 4AFC Instructions -->
+        <div id="afc-instructions-screen" class="screen">
+            <h2>本番：テストパート</h2>
+
+            <div class="instructions">
+                <h3>回答方法</h3>
+                <ul id="afc-response-instructions">
+                    <!-- Dynamically populated -->
+                </ul>
+                <div id="afc-key-diagram-wrap" style="display: none; text-align: center;">
+                    <div class="key-diagram">
+                        <div class="key-cap">左上: R</div>
+                        <div class="key-cap">右上: U</div>
+                        <div class="key-cap">左下: F</div>
+                        <div class="key-cap">右下: J</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="action-footer">
+                <button type="button" class="btn btn-primary btn-large" onclick="startAFCTest()">本番テストを開始する</button>
+                <p class="screen-note">ボタンをクリックするか、スペースキーを押して開始します。</p>
+            </div>
+        </div>
+
         <!-- 4AFC Test -->
         <div id="afc-screen" class="screen">
-            <div class="phase-badge">
-                <span class="phase-dot"></span>
-                テスト
+            <div class="trial-topbar">
+                <span id="afc-phase-label">テストパート</span>
+                <span id="afc-counter">1 / 36</span>
             </div>
-            
-            <div class="progress-container">
-                <div class="progress-bar">
-                    <div class="progress-fill" id="afc-progress"></div>
-                </div>
-                <div class="progress-text">
-                    <span id="afc-counter">1 / 36</span>
-                    <span>音声終了後に選択</span>
-                </div>
+            <div class="progress-track">
+                <div class="progress-fill" id="afc-progress"></div>
             </div>
-            
-            <div class="word-display">
-                <div class="word-label">音声が終わってから D / F / J / K で回答してください</div>
-                <div class="audio-status" id="audio-status" style="justify-content: center; margin-top: 0.5rem;">
-                    <div class="audio-icon"></div>
-                    <span>再生中...</span>
+
+            <div class="visual-stage">
+                <div class="objects-container" id="afc-objects">
+                    <!-- 2x2 options -->
+                </div>
+                <div class="center-anchor" id="afc-center-anchor">
+                    <!-- Fixation cross or clickable center '+' button -->
                 </div>
             </div>
-            
-            <div class="objects-container" id="afc-objects">
-                <!-- 4 objects will be displayed here -->
-            </div>
-            
+
+            <div class="trial-status-bar" id="afc-status-text"></div>
         </div>
-        
+
         <!-- Countdown -->
         <div id="countdown-screen" class="screen">
-            <div style="text-align: center; margin-top: 5rem;">
-                <p class="subtitle">開始まで</p>
+            <div style="text-align: center;">
+                <p class="subtitle" style="margin-bottom: 0.75rem;">まもなく開始します — 画面中央をご覧ください</p>
                 <div id="countdown-number" class="countdown">3</div>
             </div>
         </div>
-        
+
         <!-- Results Screen -->
         <div id="results-screen" class="screen">
-            <h2>実験完了 🎉</h2>
-            <p class="subtitle">ご協力ありがとうございました</p>
-            <p class="subtitle" id="download-status">結果データを自動でダウンロードします。始まらない場合は下のボタンを押してください。</p>
-            
-            <div class="results-grid" id="main-results">
-                <!-- Results will be inserted here -->
+            <h2>課題終了</h2>
+            <p class="subtitle">ご協力ありがとうございました。実験者に終了をお知らせください。</p>
+            <p class="screen-note" id="download-status" style="margin-bottom: 1.5rem;">
+                結果データを自動で保存しています...
+            </p>
+
+            <div class="btn-group" style="margin-bottom: 1.5rem;">
+                <button type="button" class="btn btn-primary" onclick="downloadWorkbook()">
+                    Excelデータを保存 (.xlsx)
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="downloadData()">
+                    CSVデータを保存 (.csv)
+                </button>
             </div>
-            
-            <div class="card">
-                <h3>学習曲線</h3>
-                <div class="chart-container">
-                    <svg id="learning-chart" class="chart-svg"></svg>
+
+            <details class="experimenter-panel" id="experimenter-results-panel">
+                <summary>
+                    <span>📊 実験者用サマリーを表示</span>
+                    <span style="font-size: 0.8rem;">クリックして展開</span>
+                </summary>
+                <div class="results-grid" id="main-results"></div>
+
+                <div class="card" id="block-chart-card" style="margin-top: 1rem;">
+                    <h3 id="chart-heading">テストブロック別正答率</h3>
+                    <div class="chart-container">
+                        <svg id="learning-chart" class="chart-svg"></svg>
+                    </div>
                 </div>
-            </div>
-            
-            <div class="card">
-                <h3>詳細結果</h3>
-                <table class="results-table" id="detailed-results">
-                    <!-- Detailed results -->
-                </table>
-            </div>
-            
-            <div class="btn-group" style="justify-content: center; margin-top: 2rem;">
-                <button class="btn btn-primary" onclick="downloadData()">
-                    データをダウンロード (CSV)
-                </button>
-                <button class="btn btn-secondary" onclick="downloadWorkbook()">
-                    データをダウンロード (Excel)
-                </button>
-            </div>
+
+                <div class="card" style="margin-top: 1rem; margin-bottom: 0;">
+                    <h3>試行別ログ</h3>
+                    <div style="max-height: 360px; overflow-y: auto;">
+                        <table class="results-table" id="detailed-results"></table>
+                    </div>
+                </div>
+            </details>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-    <script src="CSSL_Task.js?v=1.5.1"></script>
+    <script src="CSSL_Task.js?v=2.0.0"></script>
 </body>
 </html>
